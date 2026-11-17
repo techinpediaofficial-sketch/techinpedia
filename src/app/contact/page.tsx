@@ -5,7 +5,7 @@ import ContactFormClient from '@/components/ContactFormClient';
 import { Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Inquire About Hardware Rentals, Software & Marketing',
+  title: { absolute: 'Contact Us | Inquire About Hardware Rentals, Software & Marketing | TechInPedia' },
   description: 'Connect with TechInPedia for enterprise laptop/computer rentals, IT AMC maintenance, custom web & mobile apps, and ROI-focused digital marketing.',
   alternates: {
     canonical: 'https://techinpedia.com/contact',
