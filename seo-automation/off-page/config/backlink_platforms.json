@@ -64,16 +64,6 @@
       "submissionMode": "BROWSER_WEBVIEW",
       "apiSupported": true,
       "linkAttribute": "nofollow"
-    },
-    {
-      "id": "tealfeed",
-      "name": "Tealfeed",
-      "domain": "https://tealfeed.com",
-      "da": 72,
-      "type": "B2B Knowledge Sharing",
-      "submissionMode": "BROWSER_WEBVIEW",
-      "apiSupported": false,
-      "linkAttribute": "dofollow"
     }
   ]
 }

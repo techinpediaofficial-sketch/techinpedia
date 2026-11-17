@@ -143,6 +143,8 @@ $(if ($pendingApprovals.Count -eq 0) {
 • <b>Agent 2 (Keywords):</b> 3 high-intent B2B clusters analyzed.
 • <b>Agent 3 (Content):</b> Staged B2B guide (<i>Corporate Laptop Rental vs Buying</i>).
 • <b>Agent 4 (Social):</b> Staged LinkedIn + Instagram Carousel campaign.
+• <b>Off-Page Engine:</b> 5-Platform Rotation (Dev.to, Hashnode, Medium, Substack, LinkedIn).
+• <b>Google Sheet:</b> <a href="https://docs.google.com/spreadsheets/d/1uG4MtYHS5MQvzhUQlly4a11rAaeVU5e00OkJcZjSjSM/edit">techinpedia seo agent daily report</a> (Live Synced)
 
 <b>🔔 Pending Approvals ($pendingCount):</b>
 "@

@@ -1,0 +1,18 @@
+﻿{
+    "id":  "BLOG-20261117-02",
+    "type":  "BLOG_POST",
+    "title":  "New Blog Post: Corporate Laptop Rental vs Buying in Delhi NCR: The 2026 Financial \u0026 Operational Guide for Growing Companies",
+    "summary":  "In-depth B2B guide targeting \u0027corporate laptop rental delhi\u0027 and financial comparisons. Conforms to Prisma BlogPost schema. Staged as DRAFT.",
+    "agent":  "Agent 3 (SEO Content Marketing)",
+    "status":  "PENDING",
+    "createdAt":  "2026-11-17 16:58:15 IST",
+    "payload":  {
+                    "slug":  "corporate-laptop-rental-vs-buying-delhi-ncr-guide-2026",
+                    "wordCount":  600,
+                    "targetKeywords":  "corporate laptop rental delhi, laptop on rent noida, b2b it leasing",
+                    "filePath":  "C:\\Users\\DELL\\Downloads\\techinpedia\\techinpedia\\seo-automation\\agents\\..\\drafts\\content\\corporate-laptop-rental-vs-buying-delhi-ncr-guide-2026.json",
+                    "actionWhenApproved":  "Insert into database BlogPost table with status PUBLISHED",
+                    "status":  "DRAFT"
+                },
+    "rollbackPlan":  "Revert branch or delete staged draft."
+}

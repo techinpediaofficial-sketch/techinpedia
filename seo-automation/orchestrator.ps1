@@ -76,7 +76,7 @@ try {
         Write-SeoLog "Executing Off-Page SEO Engine (Backlink Verification & Google Sheet Sync)..." -Level "INFO" -Agent "ORCHESTRATOR"
         $offPageScript = Join-Path $PSScriptRoot "off-page\orchestrator_offpage.ps1"
         if (Test-Path $offPageScript) {
-            & $offPageScript -SendTelegramAlert:$false
+            & $offPageScript -SendTelegramAlert:$SendTelegramAlert
         }
     }
 

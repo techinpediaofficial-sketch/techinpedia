@@ -3,6 +3,31 @@
 # Timezone: Asia/Kolkata
 # ==============================================================================
 
+function Import-SeoEnv {
+    $envPaths = @(
+        (Join-Path $PSScriptRoot "..\config\.env"),
+        (Join-Path $PSScriptRoot "..\..\.env")
+    )
+    foreach ($p in $envPaths) {
+        if (Test-Path $p) {
+            Get-Content $p | ForEach-Object {
+                $line = $_.Trim()
+                if ($line -and -not $line.StartsWith("#") -and ($line -match '^([^=]+)=(.*)$')) {
+                    $key = $matches[1].Trim()
+                    $val = $matches[2].Trim().Trim('"').Trim("'")
+                    if (-not [string]::IsNullOrEmpty($val) -and [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($key))) {
+                        [Environment]::SetEnvironmentVariable($key, $val, "Process")
+                    }
+                }
+            }
+            break
+        }
+    }
+}
+
+# Auto-run on import
+Import-SeoEnv
+
 function Get-KolkataTime {
     try {
         $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("India Standard Time")

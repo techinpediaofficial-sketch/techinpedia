@@ -10,7 +10,8 @@
 function Get-GscAuthToken {
     param(
         [string]$ClientEmail = "metaleads1@techinpedia-sheets.iam.gserviceaccount.com",
-        [string]$PrivateKeyPem = ""
+        [string]$PrivateKeyPem = "",
+        [string]$Scope = "https://www.googleapis.com/auth/webmasters.readonly https://www.googleapis.com/auth/spreadsheets"
     )
 
     try {
@@ -37,7 +38,7 @@ function Get-GscAuthToken {
         $headerObj = @{ alg = "RS256"; typ = "JWT" }
         $claimObj = @{
             iss = $ClientEmail
-            scope = "https://www.googleapis.com/auth/webmasters.readonly"
+            scope = $Scope
             aud = "https://oauth2.googleapis.com/token"
             exp = $expEpoch
             iat = $nowEpoch

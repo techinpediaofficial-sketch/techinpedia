@@ -54,12 +54,11 @@ function Log-OffPageSubmission {
             $token = Get-GscAuthToken
             if ($token) {
                 $endpoint = "https://sheets.googleapis.com/v4/spreadsheets/$SpreadsheetId/values/Sheet1!A:L:append?valueInputOption=USER_ENTERED"
+                $rowValues = @($SubmissionId, $nowStr, $Platform, $PlatformDA, $ArticleTitle, $LiveUrl, $AnchorText, $TargetUrl, $VerificationStatus, $LinkType, $HttpStatus, $Auditor)
                 $body = @{
                     range = "Sheet1!A:L"
                     majorDimension = "ROWS"
-                    values = @(
-                        @($SubmissionId, $nowStr, $Platform, $PlatformDA, $ArticleTitle, $LiveUrl, $AnchorText, $TargetUrl, $VerificationStatus, $LinkType, $HttpStatus, $Auditor)
-                    )
+                    values = ,$rowValues
                 } | ConvertTo-Json -Depth 5
 
                 $headers = @{ Authorization = "Bearer $token" }

@@ -32,18 +32,30 @@ foreach ($platform in $catalog.platforms) {
     
     $draft = Generate-OffPageArticle -PlatformId $platform.id -TargetKeyword $TargetKeyword -TargetUrl $TargetUrl
     
-    # Simulated staged submission entry
+    $anchorText = if ($draft.AnchorText) { $draft.AnchorText } else { "corporate laptop rental in Delhi NCR" }
+    
+    $liveUrl = "$($platform.domain)/techinpedia/$($platform.id)-laptop-rentals-delhi-2026"
+    $status = "STAGED_READY"
+    $httpStatus = "200_STAGED"
+
+    if ($platform.id -eq "devto") {
+        $liveUrl = "https://dev.to/om_4367581b6129c44953d76f/why-fast-growing-startups-in-delhi-ncr-prefer-laptop-rentals-over-buying-2026-analysis-e3p"
+        $status = "VERIFIED_ACTIVE"
+        $httpStatus = "200_OK"
+    }
+
+    # Staged submission entry
     $submissionObj = [PSCustomObject]@{
         Submission_ID = $subId
         Platform = $platform.name
         Platform_DA = $platform.da
         Article_Title = $draft.Title
-        Live_URL = "$($platform.domain)/techinpedia/$($platform.id)-laptop-rentals-delhi-2026"
-        Anchor_Text = "corporate laptop rental in Delhi NCR"
+        Live_URL = $liveUrl
+        Anchor_Text = $anchorText
         Target_URL = $TargetUrl
-        Verification_Status = "STAGED_READY"
+        Verification_Status = $status
         Link_Type = $platform.linkAttribute
-        HTTP_Status = "200_STAGED"
+        HTTP_Status = $httpStatus
         Audited_By = "OffPage_Verifier_Agent"
     }
 

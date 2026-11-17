@@ -1,6 +1,16 @@
 {
   "project": "TechInPedia Autonomous SEO & Marketing System",
   "version": "1.0.0",
+  "primarySeoFocus": "laptop-on-rent",
+  "priorityKeywords": [
+    "laptop on rent",
+    "laptop on rent in delhi",
+    "laptop on rent in noida",
+    "laptop on rent in gurgaon",
+    "corporate laptop rental delhi ncr",
+    "bulk laptop rental",
+    "macbook on rent delhi"
+  ],
   "siteUrl": "https://techinpedia.com",
   "timezone": "Asia/Kolkata",
   "sitemapUrl": "https://techinpedia.com/sitemap.xml",
