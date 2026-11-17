@@ -1,0 +1,139 @@
+{
+  "company": {
+    "name": "TechInPedia",
+    "siteUrl": "https://techinpedia.com",
+    "supportEmail": "Support@techinpedia.com",
+    "primaryPhone": "+91 98187 68680",
+    "secondaryPhone": "+12012010699",
+    "whatsappLink": "https://wa.me/919818768680",
+    "registeredAddress": "SHOP NO B- 12 M-5, GUPTA PLAZA LSC BLK M, VIKAS PURI, New Delhi 110018",
+    "corporateAddress": "C-101 Sector 2 Gautam Buddha Nagar, Noida, Uttar Pradesh 201301",
+    "usAddress": "25 Kent Ave lobby; Suite 401, Brooklyn, NY 11249, United States",
+    "social": {
+      "linkedin": "https://linkedin.com/company/techinpedia",
+      "twitter": "https://x.com/techinpedia",
+      "instagram": "https://www.instagram.com/techinpedia/",
+      "facebook": "https://www.facebook.com/people/Techinpedia/61585484607333/",
+      "youtube": "https://www.youtube.com/@Techinpediaofficial"
+    }
+  },
+  "businessUnits": [
+    {
+      "id": "hardware-rentals",
+      "name": "Enterprise IT Hardware Rentals",
+      "primaryTargetRegions": ["Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad", "Delhi NCR"],
+      "services": [
+        {
+          "slug": "laptop-rental",
+          "url": "https://techinpedia.com/services/laptop-rental",
+          "title": "Laptop on Rent in Delhi NCR",
+          "targetKeywords": [
+            "laptop on rent delhi ncr",
+            "corporate laptop rental delhi",
+            "macbook on rent noida",
+            "bulk laptop rental for companies gurgaon",
+            "dell hp lenovo laptop rental"
+          ]
+        },
+        {
+          "slug": "computer-rental",
+          "url": "https://techinpedia.com/services/computer-rental",
+          "title": "Desktop & Computer on Rent in Delhi NCR",
+          "targetKeywords": [
+            "desktop on rent delhi",
+            "computer rental for bpo",
+            "gaming pc on rent delhi",
+            "hp dell lenovo desktop rental"
+          ]
+        },
+        {
+          "slug": "macbook-rental",
+          "url": "https://techinpedia.com/services/macbook-rental",
+          "title": "MacBook on Rent in Delhi NCR",
+          "targetKeywords": [
+            "macbook pro on rent delhi",
+            "macbook air m2 m3 rental gurgaon",
+            "apple laptop rental delhi ncr"
+          ]
+        },
+        {
+          "slug": "amc-maintenance",
+          "url": "https://techinpedia.com/services/amc-maintenance",
+          "title": "IT AMC Maintenance Services",
+          "targetKeywords": [
+            "it amc services delhi",
+            "computer maintenance contract noida",
+            "office it infrastructure support"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "software-engineering",
+      "name": "Custom Software & Web Engineering",
+      "primaryTargetRegions": ["India", "USA", "Global"],
+      "services": [
+        {
+          "slug": "custom-software-development",
+          "url": "https://techinpedia.com/services/custom-software-development",
+          "title": "Custom Software Development Company",
+          "targetKeywords": [
+            "custom software development company india",
+            "enterprise web application development",
+            "saas application development agency"
+          ]
+        },
+        {
+          "slug": "website-development",
+          "url": "https://techinpedia.com/services/website-development",
+          "title": "Custom Website Development Agency",
+          "targetKeywords": [
+            "nextjs development company india",
+            "custom react website development",
+            "high performance corporate web design"
+          ]
+        },
+        {
+          "slug": "mobile-application",
+          "url": "https://techinpedia.com/services/mobile-application",
+          "title": "Mobile App Development Agency",
+          "targetKeywords": [
+            "flutter app development agency india",
+            "react native app developers delhi",
+            "cross platform mobile application development"
+          ]
+        },
+        {
+          "slug": "crm-erp-solutions",
+          "url": "https://techinpedia.com/services/crm-erp-solutions",
+          "title": "Custom CRM & ERP Solutions",
+          "targetKeywords": [
+            "custom crm software development",
+            "b2b erp development company india",
+            "business automation software"
+          ]
+        },
+        {
+          "slug": "cloud-services",
+          "url": "https://techinpedia.com/services/cloud-services",
+          "title": "Cloud Infrastructure & DevOps",
+          "targetKeywords": [
+            "cloud infrastructure management",
+            "devops engineering services india",
+            "aws gcp cloud migration"
+          ]
+        },
+        {
+          "slug": "digital-marketing",
+          "url": "https://techinpedia.com/services/digital-marketing",
+          "title": "Performance Digital Marketing Agency",
+          "targetKeywords": [
+            "b2b digital marketing agency delhi",
+            "lead generation company india",
+            "performance marketing google ads meta ads"
+          ]
+        }
+      ]
+    }
+  ]
+}

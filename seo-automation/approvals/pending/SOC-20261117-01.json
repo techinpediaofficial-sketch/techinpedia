@@ -1,0 +1,60 @@
+﻿{
+    "id":  "SOC-20261117-01",
+    "type":  "SOCIAL_POST",
+    "title":  "B2B Social Marketing Campaign: B2B Hardware Rental vs Ownership Campaign (Delhi NCR Focus)",
+    "summary":  "Multi-channel campaign (LinkedIn thought leadership + 5-slide Instagram visual carousel script) targeting corporate hardware rentals in Delhi NCR.",
+    "agent":  "Agent 4 (Digital Marketing)",
+    "status":  "PENDING",
+    "createdAt":  "2026-11-17 15:22:15 IST",
+    "payload":  {
+                    "budgetProposed":  "₹0 Organic (Optional ₹5,000 Boost upon review)",
+                    "instagram":  {
+                                      "caption":  "Scaling your team in Delhi NCR? Discover how renting Dell, HP, Lenovo \u0026 MacBook hardware cuts IT capital outlay by 60%. DM us \u0027RENT\u0027 or tap the link in bio for instant quotes. #ITRentals #TechInPedia #CorporateLeasing #DelhiNCR",
+                                      "visualTheme":  "TechInPedia Dark Purple \u0026 Violet Gradient (#0f0728 with #802ee3 accents)",
+                                      "concept":  "5-Slide Educational Carousel",
+                                      "slides":  [
+                                                     {
+                                                         "subtext":  "Swipe to see the financial breakdown why Delhi NCR CTOs rent instead ➔",
+                                                         "headline":  "STOP BUYING LAPTOPS FOR YOUR COMPANY IN 2026.",
+                                                         "slideNumber":  1,
+                                                         "visual":  "Split image: Stack of cash vs sleek Dell Latitude \u0026 MacBook Pro"
+                                                     },
+                                                     {
+                                                         "subtext":  "Outright purchase locks ₹50L+ in depreciating silicon. Rentals preserve working capital for core growth and marketing.",
+                                                         "headline":  "1. Cash Flow Liquidity",
+                                                         "slideNumber":  2,
+                                                         "visual":  "Graph showing cash flow divergence over 24 months"
+                                                     },
+                                                     {
+                                                         "subtext":  "Hardware failure? No 14-day warranty delays. We provide same-day doorstep hot-swap across Delhi, Noida \u0026 Gurgaon.",
+                                                         "headline":  "2. Zero Downtime Buffer Guarantee",
+                                                         "slideNumber":  3,
+                                                         "visual":  "2-hour delivery clock icon with TechInPedia logistics van"
+                                                     },
+                                                     {
+                                                         "subtext":  "Upgrade seamlessly from Intel i5/i7 to latest Apple M-Series without bearing secondary-market resale losses.",
+                                                         "headline":  "3. Always On Modern Silicon",
+                                                         "slideNumber":  4,
+                                                         "visual":  "Side-by-side specs comparison table"
+                                                     },
+                                                     {
+                                                         "subtext":  "Flexible tenure from 1 to 36 months. Bulk configurations available now.",
+                                                         "cta":  "Link in bio or WhatsApp +91 98187 68680 for immediate dispatch.",
+                                                         "headline":  "Equip Your Team in Under 24 Hours.",
+                                                         "slideNumber":  5,
+                                                         "visual":  "TechInPedia verified badge with WhatsApp CTA button"
+                                                     }
+                                                 ]
+                                  },
+                    "linkedIn":  {
+                                     "characterCount":  1321,
+                                     "targetLink":  "https://techinpedia.com/services/laptop-rental",
+                                     "text":  "Buying 50 Laptops For Your Team This Quarter? \n\nHere is why progressive enterprise leaders across Delhi NCR are halting CapEx purchases and switching to flexible IT hardware rentals:\n\n💡 1. 100% Tax Deductible (OpEx)\nEvery rental invoice is a direct operating expense under GST with full Input Tax Credit (ITC)—shielding your cash flow and boosting balance sheet liquidity.\n\n⚡ 2. Zero AMC \u0026 Maintenance Headaches\nHardware crash at 10 AM on a client delivery day? Waiting 2 weeks for OEM service centers ruins engineering velocity. With TechInPedia, our local hubs across Gurgaon, Noida, and Delhi dispatch doorstep replacement units within hours.\n\n🔄 3. Rapid Scaling Without Long-Term Lock-In\nOnboarding 20 contract developers or 35 summer interns? Rent commercial-grade Dell Latitude, Lenovo ThinkPad, or Apple MacBook Pro M-series for 1 to 24 months, and return or upgrade whenever project needs shift.\n\nOver 100+ businesses across Cyber City, Sector 62 Noida, and Okhla trust TechInPedia for zero-downtime IT deployments.\n\n👉 Exploring flexible laptop or desktop rentals for your company? \nVisit https://techinpedia.com/services/laptop-rental or DM us for a custom corporate quotation.\n\n#CorporateLaptopRental #ITHardwareRentals #DelhiNCR #StartupsIndia #BusinessOperations #TechInPedia #OpexVsCapex #ITInfrastructure"
+                                 },
+                    "targetAudience":  "CTOs, Operations Directors, HR Managers (Delhi NCR)",
+                    "campaignId":  "camp-hardware-procurement-q4",
+                    "title":  "B2B Hardware Rental vs Ownership Campaign (Delhi NCR Focus)",
+                    "status":  "PENDING_APPROVAL"
+                },
+    "rollbackPlan":  "Revert branch or delete staged draft."
+}

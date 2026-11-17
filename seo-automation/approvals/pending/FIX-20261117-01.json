@@ -1,0 +1,27 @@
+﻿{
+    "id":  "FIX-20261117-01",
+    "type":  "CODE_FIX",
+    "title":  "Fix redundant \u0027| TechInPedia\u0027 double branding in page titles",
+    "summary":  "Fixes duplicate title tags on /services, /blog, /about, and /contact so Google SERPs display clean 50-60 char brand titles.",
+    "agent":  "Agent 1 (Technical SEO)",
+    "status":  "PENDING",
+    "createdAt":  "2026-11-17 15:22:14 IST",
+    "payload":  {
+                    "affectedUrls":  [
+                                         "https://techinpedia.com/services",
+                                         "https://techinpedia.com/blog",
+                                         "https://techinpedia.com/about"
+                                     ],
+                    "issueCount":  3,
+                    "description":  "Removes redundant \u0027| TechInPedia\u0027 suffix from child page metadata where root layout template already appends \u0027| TechInPedia\u0027.",
+                    "branch":  "seo/fix-title-duplication",
+                    "modifiedFiles":  [
+                                          "src/app/services/page.tsx",
+                                          "src/app/blog/page.tsx",
+                                          "src/app/about/page.tsx",
+                                          "src/app/contact/page.tsx"
+                                      ],
+                    "rollbackPlan":  "git checkout main; git branch -D seo/fix-title-duplication"
+                },
+    "rollbackPlan":  "git checkout main; git branch -D seo/fix-title-duplication"
+}

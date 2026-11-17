@@ -1,0 +1,61 @@
+name: TechInPedia Autonomous SEO & Marketing Automation
+
+on:
+  schedule:
+    # 01:30 UTC = 07:00 AM IST (Morning Audit & Content Drafting)
+    - cron: '30 1 * * *'
+    # 13:30 UTC = 07:00 PM IST (Evening Social Marketing & Telegram Digest)
+    - cron: '30 13 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Execution Mode'
+        required: true
+        default: 'Full'
+        type: choice
+        options:
+          - Full
+          - Morning
+          - Evening
+          - TechnicalSeo
+          - KeywordResearch
+          - ContentMarketing
+          - DigitalMarketing
+          - Reporting
+
+jobs:
+  run-seo-automation:
+    name: Execute Autonomous SEO & Marketing Pipeline
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Autonomous SEO & Marketing Orchestrator
+        shell: pwsh
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          GSC_SITE_URL: "https://techinpedia.com/"
+          GSC_SERVICE_ACCOUNT_EMAIL: "metaleads1@techinpedia-sheets.iam.gserviceaccount.com"
+          GA4_MEASUREMENT_ID: "G-X5J0BRM1KK"
+          GA4_PROPERTY_ID: ${{ secrets.GA4_PROPERTY_ID }}
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+        run: |
+          $mode = if ('${{ github.event_name }}' -eq 'workflow_dispatch') { '${{ inputs.mode }}' } else { 'Full' }
+          Write-Host "Running TechInPedia SEO Orchestrator in mode: $mode"
+          & ./seo-automation/orchestrator.ps1 -Mode $mode -SendTelegramAlert
+
+      - name: Archive Daily Run Logs & Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: seo-daily-reports
+          path: |
+            seo-automation/logs/daily_runs/
+            seo-automation/approvals/pending/
+            seo-automation/drafts/
+          retention-days: 30

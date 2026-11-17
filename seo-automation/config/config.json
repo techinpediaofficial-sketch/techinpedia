@@ -1,0 +1,49 @@
+{
+  "project": "TechInPedia Autonomous SEO & Marketing System",
+  "version": "1.0.0",
+  "siteUrl": "https://techinpedia.com",
+  "timezone": "Asia/Kolkata",
+  "sitemapUrl": "https://techinpedia.com/sitemap.xml",
+  "robotsUrl": "https://techinpedia.com/robots.txt",
+  "schedule": {
+    "morningRunHour": 7,
+    "eveningRunHour": 19,
+    "cronExpressionMorning": "0 7 * * *",
+    "cronExpressionEvening": "0 19 * * *"
+  },
+  "thresholds": {
+    "minTitleLength": 30,
+    "maxTitleLength": 65,
+    "minDescriptionLength": 110,
+    "maxDescriptionLength": 165,
+    "strikingDistanceMinPosition": 5.0,
+    "strikingDistanceMaxPosition": 20.0,
+    "lowCtrThresholdPercent": 3.0,
+    "highImpressionThreshold": 100
+  },
+  "approvals": {
+    "autoApproveCodeBranching": true,
+    "requireApprovalForProductionDeploy": true,
+    "requireApprovalForBlogPublish": true,
+    "requireApprovalForSocialPost": true,
+    "requireApprovalForPaidAds": true
+  },
+  "integrations": {
+    "googleSearchConsole": {
+      "enabled": true,
+      "siteProperty": "https://techinpedia.com/",
+      "serviceAccountEmail": "metaleads1@techinpedia-sheets.iam.gserviceaccount.com"
+    },
+    "googleAnalytics4": {
+      "enabled": true,
+      "measurementId": "G-X5J0BRM1KK"
+    },
+    "pagespeedInsights": {
+      "enabled": true,
+      "strategy": "mobile"
+    },
+    "telegram": {
+      "enabled": true
+    }
+  }
+}
