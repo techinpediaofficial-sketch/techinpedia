@@ -1,0 +1,31 @@
+{
+  "targetTerm": "laptop on rent near me",
+  "priorityRegions": ["Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad"],
+  "coreActions": [
+    {
+      "pillar": "Google Business Profile (Local Map Pack)",
+      "action": "Optimize primary GMB category as 'Computer Rental Agency' with verified addresses in Noida (Sector 2) and Delhi (Vikas Puri). Set service radius covering all NCR pincodes."
+    },
+    {
+      "pillar": "LocalBusiness Structured Data (JSON-LD)",
+      "action": "Deploy LocalBusiness schema on location routes with geo coordinates, opening hours, WhatsApp direct dial (+91 98187 68680), and specific areaServed arrays."
+    },
+    {
+      "pillar": "Hyperlocal Page Optimization",
+      "action": "Ensure all 50+ hub routes (/laptop-on-rent/delhi, /noida, /gurgaon, /nehru-place, /cyber-city) feature explicit 'Near Me' H2 tags and same-day doorstep delivery FAQs."
+    },
+    {
+      "pillar": "High-Intent Keyword Tracking",
+      "action": "Track daily Search Console rankings for 'laptop on rent near me', 'computer rent near me', 'corporate laptop rental delhi'."
+    }
+  ],
+  "monitoredUrls": [
+    "https://techinpedia.com/laptop-on-rent",
+    "https://techinpedia.com/services/laptop-rental",
+    "https://techinpedia.com/laptop-on-rent/delhi",
+    "https://techinpedia.com/laptop-on-rent/noida",
+    "https://techinpedia.com/laptop-on-rent/gurgaon",
+    "https://techinpedia.com/bulk-laptop-rental",
+    "https://techinpedia.com/laptop-rental-price"
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "targetService": "Enterprise Hardware Rentals (TechInPedia)",
+  "priorityAnchorKeywords": [
+    "laptop on rent in Delhi",
+    "laptop on rent in Noida",
+    "corporate laptop rental Delhi NCR",
+    "bulk laptop rental",
+    "laptop rental near me"
+  ],
+  "targetLandingPages": [
+    "https://techinpedia.com/services/laptop-rental",
+    "https://techinpedia.com/laptop-on-rent/delhi",
+    "https://techinpedia.com/laptop-on-rent/noida",
+    "https://techinpedia.com/laptop-on-rent/gurgaon",
+    "https://techinpedia.com/bulk-laptop-rental"
+  ],
+  "platforms": [
+    {
+      "id": "devto",
+      "name": "Dev.to",
+      "domain": "https://dev.to",
+      "da": 91,
+      "type": "Technical & Engineering Blog",
+      "submissionMode": "API_OR_BROWSER",
+      "apiSupported": true,
+      "linkAttribute": "dofollow"
+    },
+    {
+      "id": "hashnode",
+      "name": "Hashnode",
+      "domain": "https://hashnode.com",
+      "da": 88,
+      "type": "Developer & IT Community",
+      "submissionMode": "API_OR_BROWSER",
+      "apiSupported": true,
+      "linkAttribute": "dofollow"
+    },
+    {
+      "id": "medium",
+      "name": "Medium",
+      "domain": "https://medium.com",
+      "da": 96,
+      "type": "General Publishing & B2B Tech",
+      "submissionMode": "BROWSER_WEBVIEW",
+      "apiSupported": false,
+      "linkAttribute": "nofollow"
+    },
+    {
+      "id": "substack",
+      "name": "Substack",
+      "domain": "https://substack.com",
+      "da": 92,
+      "type": "Business & Technology Newsletter",
+      "submissionMode": "BROWSER_WEBVIEW",
+      "apiSupported": false,
+      "linkAttribute": "dofollow"
+    },
+    {
+      "id": "linkedin-pulse",
+      "name": "LinkedIn Articles",
+      "domain": "https://www.linkedin.com/pulse/",
+      "da": 98,
+      "type": "Enterprise Professional Network",
+      "submissionMode": "BROWSER_WEBVIEW",
+      "apiSupported": true,
+      "linkAttribute": "nofollow"
+    },
+    {
+      "id": "tealfeed",
+      "name": "Tealfeed",
+      "domain": "https://tealfeed.com",
+      "da": 72,
+      "type": "B2B Knowledge Sharing",
+      "submissionMode": "BROWSER_WEBVIEW",
+      "apiSupported": false,
+      "linkAttribute": "dofollow"
+    }
+  ]
+}
