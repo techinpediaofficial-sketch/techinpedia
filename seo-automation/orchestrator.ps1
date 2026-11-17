@@ -72,6 +72,14 @@ try {
         $marketingRes = Invoke-DigitalMarketing -GenerateSocialDraft:$GenerateDrafts
     }
 
+    if ($Mode -in @("Full", "Morning", "Evening")) {
+        Write-SeoLog "Executing Off-Page SEO Engine (Backlink Verification & Google Sheet Sync)..." -Level "INFO" -Agent "ORCHESTRATOR"
+        $offPageScript = Join-Path $PSScriptRoot "off-page\orchestrator_offpage.ps1"
+        if (Test-Path $offPageScript) {
+            & $offPageScript -SendTelegramAlert:$false
+        }
+    }
+
     if ($Mode -in @("Full", "Evening", "Reporting")) {
         Write-SeoLog "Executing Agent 5: Performance & Executive Reporting..." -Level "INFO" -Agent "ORCHESTRATOR"
         $reportingRes = Invoke-PerformanceReporting -TechSeoResult $techSeoRes `
