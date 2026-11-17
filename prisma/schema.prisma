@@ -1,0 +1,3977 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ContentStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+  ARCHIVED
+}
+
+enum SettingCategory {
+  COMPANY
+  SOCIAL
+  SEO
+  WEBSITE
+}
+
+enum ChatStatus {
+  ACTIVE
+  RESOLVED
+  CLOSED
+}
+
+enum MessageSender {
+  USER
+  ADMIN
+  SYSTEM
+}
+
+enum SiteType {
+  PUBLIC_WEBSITE
+  MARKETPLACE
+  INTERNAL_PORTAL
+  API
+}
+
+// ==========================================
+// 1. AUTHENTICATION & RBAC
+// ==========================================
+model User {
+  id                  String     @id @default(uuid())
+  name                String
+  email               String     @unique
+  password            String
+  role                Role       @default(ADMIN)
+  status              UserStatus @default(ACTIVE)
+  mustChangePassword  Boolean    @default(true)
+  failedLoginAttempts Int        @default(0)
+  lockedUntil         DateTime?
+  avatar              String?    @db.Text
+  appRoleId           String?
+  appRole             AppRole?   @relation(fields: [appRoleId], references: [id], onDelete: SetNull)
+  employeeId          String?    @unique
+  employee            Employee?  @relation("UserToEmployee", fields: [employeeId], references: [id], onDelete: SetNull)
+  companyId           String?
+  company             Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  companyRole         String?    @default("OWNER")
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  enquiriesAssigned   Enquiry[]             @relation("AssignedEnquiries")
+  enquiryNotes        EnquiryNote[]
+  activityLogs        ActivityLog[]
+  createdPaymentLinks PaymentLink[]         @relation("CreatedPaymentLinks")
+  createdMeetings     Meeting[]             @relation("MeetingCreator")
+  EmployeeSession     EmployeeSession[]
+  TeamChatParticipant TeamChatParticipant[]
+  TeamChatMessage     TeamChatMessage[]
+  TeamChatMessageRead TeamChatMessageRead[]
+
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@index([appRoleId])
+  @@index([companyId])
+}
+
+model Permission {
+  id           String              @id @default(uuid())
+  code         String              @unique
+  name         String
+  category     String
+  description  String?
+  roles        RolePermission[]
+  appRolePerms AppRolePermission[]
+  createdAt    DateTime            @default(now())
+
+  @@index([category])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  role         Role
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([role, permissionId])
+  @@index([role])
+}
+
+model AppRole {
+  id          String              @id @default(uuid())
+  name        String              @unique
+  displayName String
+  description String?
+  isSystem    Boolean             @default(false)
+  users       User[]
+  employees   Employee[]
+  permissions AppRolePermission[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+}
+
+model AppRolePermission {
+  id           String     @id @default(uuid())
+  roleId       String     @db.VarChar(50)
+  role         AppRole    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String     @db.VarChar(50)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// ==========================================
+// 2. PUBLIC CONTENT & CMS
+// ==========================================
+model Service {
+  id               String        @id @default(uuid())
+  title            String
+  slug             String        @unique
+  shortDescription String        @db.Text
+  description      String        @db.LongText
+  icon             String        @default("Code")
+  technologies     String        @db.Text
+  image            String?
+  seoTitle         String?
+  seoDescription   String?       @db.Text
+  displayOrder     Int           @default(0)
+  status           ContentStatus @default(PUBLISHED)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([status])
+  @@index([displayOrder])
+}
+
+model Project {
+  id            String        @id @default(uuid())
+  title         String
+  slug          String        @unique
+  category      String
+  clientType    String?
+  shortDesc     String        @db.Text
+  description   String        @db.LongText
+  problem       String?       @db.Text
+  solution      String?       @db.Text
+  features      String?       @db.Text
+  technologies  String        @db.Text
+  results       String?       @db.Text
+  featuredImage String
+  gallery       String?       @db.Text
+  featured      Boolean       @default(false)
+  status        ContentStatus @default(PUBLISHED)
+  displayOrder  Int           @default(0)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([featured])
+}
+
+model BlogPost {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  excerpt        String        @db.Text
+  content        String        @db.LongText
+  featuredImage  String?
+  category       String
+  tags           String?
+  author         String        @default("TechInPedia Team")
+  seoTitle       String?
+  seoDescription String?       @db.Text
+  status         ContentStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+model NewsPost {
+  id             String        @id @default(uuid()) @db.VarChar(64)
+  title          String
+  slug           String        @unique @db.VarChar(64)
+  excerpt        String        @db.Text
+  content        String        @db.LongText
+  featuredImage  String?
+  category       String
+  tags           String?
+  author         String        @default("TechInPedia Team")
+  seoTitle       String?
+  seoDescription String?       @db.Text
+  status         ContentStatus @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@index([publishedAt])
+}
+
+model Testimonial {
+  id           String        @id @default(uuid())
+  clientName   String
+  company      String
+  designation  String
+  testimonial  String        @db.Text
+  image        String?
+  rating       Int           @default(5)
+  displayOrder Int           @default(0)
+  status       ContentStatus @default(PUBLISHED)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status])
+  @@index([displayOrder])
+}
+
+model Faq {
+  id           String        @id @default(uuid())
+  question     String        @db.Text
+  answer       String        @db.Text
+  category     String        @default("General")
+  displayOrder Int           @default(0)
+  status       ContentStatus @default(PUBLISHED)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@index([displayOrder])
+}
+
+model SeoLandingPage {
+  id              String  @id @default(uuid())
+  internalName    String
+  title           String
+  slug            String  @unique
+  metaTitle       String?
+  metaDescription String? @db.Text
+  focusKeyword    String?
+  canonicalUrl    String?
+  robotsIndex     Boolean @default(true)
+  robotsFollow    Boolean @default(true)
+  ogTitle         String?
+  ogDescription   String? @db.Text
+  ogImage         String?
+
+  heroHeading      String?
+  heroSubheading   String? @db.Text
+  heroImage        String?
+  heroImageAlt     String?
+  primaryCtaText   String?
+  primaryCtaLink   String?
+  secondaryCtaText String?
+  secondaryCtaLink String?
+
+  blocks String? @db.LongText
+
+  status      ContentStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdBy   String?
+  updatedBy   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  redirects SeoPageRedirect[]
+
+  @@index([slug])
+  @@index([status])
+}
+
+model SeoPageRedirect {
+  id        String          @id @default(uuid())
+  oldPath   String          @unique
+  newPath   String
+  pageId    String?
+  page      SeoLandingPage? @relation(fields: [pageId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+
+  @@index([oldPath])
+}
+
+// ==========================================
+// 3. BUSINESS UNITS, SITES & PORTALS
+// ==========================================
+model BusinessUnit {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sites     Site[]
+  employees EmployeeBusinessUnit[]
+  enquiries Enquiry[]
+  customers Customer[]
+  invoices  Invoice[]
+  payments  Payment[]
+  expenses  Expense[]
+}
+
+model Site {
+  id             String        @id @default(uuid())
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+
+  code      String   @unique
+  name      String
+  domain    String
+  type      SiteType
+  isPrimary Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  domains   SiteDomain[]
+  enquiries Enquiry[]
+
+  @@index([businessUnitId])
+}
+
+model SiteDomain {
+  id        String   @id @default(uuid())
+  siteId    String
+  site      Site     @relation(fields: [siteId], references: [id], onDelete: Cascade)
+  hostname  String   @unique
+  isPrimary Boolean  @default(false)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([siteId])
+}
+
+// ==========================================
+// 3.5 CRM LEADS, CONTACTS, COMPANIES & CUSTOMERS
+// ==========================================
+model Enquiry {
+  id              String        @id @default(uuid())
+  name            String
+  email           String
+  phone           String?
+  alternatePhone  String?
+  whatsappNumber  String?
+  company         String?
+  jobTitle        String?
+  website         String?
+  address         String?
+  city            String?
+  state           String?
+  country         String?       @default("India")
+  postalCode      String?
+  service         String?
+  projectType     String?
+  budget          String?
+  timeline        String?
+  message         String        @db.Text
+  source          String        @default("Contact Page")
+  leadSubSource   String?
+  utmSource       String?
+  utmMedium       String?
+  utmCampaign     String?
+  utmTerm         String?
+  utmContent      String?
+  referrerUrl     String?
+  landingPage     String?
+  estimatedValue  Float?
+  priority        String?       @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  temperature     String?       @default("WARM") // COLD, WARM, HOT
+  score           Int?          @default(10)
+  status          EnquiryStatus @default(NEW)
+  assignedTo      String?
+  pipelineStageId String?
+  nextFollowUp    DateTime?
+  lastContacted   DateTime?
+  convertedDate   DateTime?
+  lostDate        DateTime?
+  lostReason      String?
+  lostNotes       String?       @db.Text
+
+  departmentId       String?
+  department         Department? @relation("DepartmentEnquiries", fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId             String?
+  team               Team?       @relation("TeamEnquiries", fields: [teamId], references: [id], onDelete: SetNull)
+  assignedEmployeeId String?
+  assignedEmployee   Employee?   @relation("EmployeeAssignedEnquiries", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+
+  wonDealId String? @unique
+  wonDeal   Deal?   @relation("EnquiryToDeal", fields: [wonDealId], references: [id], onDelete: SetNull)
+
+  assignedUser User? @relation("AssignedEnquiries", fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+  siteId         String?
+  site           Site?         @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  companyId      String?
+  tenantCompany  Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  assignedAt           DateTime? // Tracks when the lead was assigned to the rep
+  assignmentAcceptedAt DateTime? // Tracks when the assigned rep accepted the lead
+  assignmentAcceptedBy String?   // Tracks who accepted it (employee/user ID)
+  firstViewedAt        DateTime? // First time the assigned employee viewed this lead
+  firstResponseAt      DateTime? // First real employee outbound activity after assignment
+
+  notes        EnquiryNote[]
+  followUps    FollowUp[]
+  paymentLinks PaymentLink[]
+  meetings     Meeting[]
+  proposals    Proposal[]
+
+  @@index([email])
+  @@index([status])
+  @@index([assignedTo])
+  @@index([assignedEmployeeId])
+  @@index([departmentId])
+  @@index([teamId])
+  @@index([createdAt])
+  @@index([source])
+  @@index([businessUnitId])
+  @@index([siteId])
+  @@index([businessUnitId, status])
+  @@index([businessUnitId, createdAt])
+}
+
+model EnquiryNote {
+  id        String   @id @default(uuid())
+  enquiryId String
+  enquiry   Enquiry  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([enquiryId])
+  @@index([userId])
+}
+
+model Company {
+  id         String  @id @default(uuid())
+  name       String
+  industry   String?
+  domain     String?
+  phone      String?
+  email      String?
+  website    String?
+  address    String?
+  city       String?
+  state      String?
+  country    String? @default("India")
+  postalCode String?
+  gstNumber  String?
+  notes      String? @db.Text
+
+  // SaaS & Multi-Tenancy
+  isTenant            Boolean @default(false)
+  tenantStatus        String  @default("ACTIVE") // ACTIVE, SUSPENDED, TRIAL, CANCELLED
+  allowedModules      String? @db.Text // JSON array e.g. ["whatsapp", "crm.leads", "crm.contacts"]
+  webhookSecret       String? @db.VarChar(128)
+  planName            String? @default("WhatsApp SaaS") @db.VarChar(64)
+  monthlyMessageLimit Int     @default(10000)
+  maxEmployees        Int     @default(5)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts              Contact[]
+  deals                 Deal[]
+  customers             Customer[]
+  users                 User[]
+  whatsappConnections   WhatsappConnection[]
+  whatsappConversations WhatsappConversation[]
+  whatsappTemplates     WhatsappTemplate[]
+  whatsappCampaigns     WhatsappCampaign[]
+  whatsappSuppressions  WhatsappSuppression[]
+  whatsappWebhookEvents WhatsappWebhookEvent[]
+  supportTickets        SupportTicket[]
+  enquiries             Enquiry[]
+  slaRules              SlaRule[]
+  contactSegments       ContactSegment[]
+  contactLists          ContactList[]
+  contactCustomFields   ContactCustomField[]
+  dripCampaigns         DripCampaign[]
+  chatbots              WhatsappChatbot[]
+  aiConfig              AiConfig?
+  aiKnowledgeBases      AiKnowledgeBase[]
+  aiKnowledgeSuggestions AiKnowledgeSuggestion[]
+  aiGoals               AiGoal[]
+  aiIntents             AiIntent[]
+  aiUsageLogs           AiUsageLog[]
+  aiFeedbacks           AiFeedback[]
+  whatsappTemplatePurposes       WhatsappTemplatePurpose[]
+  packageWhatsappConfigs         PackageWhatsAppConfig[]
+  whatsappTemplateButtonActions  WhatsappTemplateButtonAction[]
+  whatsappTemplateParamMappings  WhatsappTemplateParameterMapping[]
+  whatsappTemplateAuditLogs      WhatsappTemplateAuditLog[]
+
+  @@index([name])
+  @@index([domain])
+  @@index([email])
+  @@index([isTenant])
+}
+
+model Contact {
+  id         String   @id @default(uuid())
+  companyId  String?
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  name       String
+  firstName  String?
+  lastName   String?
+  email      String
+  phone      String?
+  jobTitle   String?
+  department String?
+  isPrimary         Boolean   @default(false)
+  notes             String?   @db.Text
+  assignedUserId    String?   @db.VarChar(64)
+  leadStatus        String?   @db.VarChar(64)
+  source            String?   @default("MANUAL") @db.VarChar(64)
+  tags              String?   @db.Text
+  customFields      String?   @db.Text
+  optInStatus       String    @default("OPTED_IN") @db.VarChar(32) // OPTED_IN, OPTED_OUT, UNCONFIRMED
+  marketingOptIn    Boolean   @default(true)
+  consentSource     String?   @db.VarChar(64)
+  consentTimestamp  DateTime?
+  consentProof      String?   @db.VarChar(255)
+  optOutTimestamp   DateTime?
+  optOutReason      String?   @db.VarChar(255)
+  isBlacklisted     Boolean   @default(false)
+  lastInteractionAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  deals           Deal[]
+  customers       Customer[]
+  meetings        Meeting[]
+  listMemberships ContactListMember[]
+  dripEnrollments DripEnrollment[]
+  chatbotSessions ChatbotSession[]
+  aiUsageLogs     AiUsageLog[]
+
+  @@index([companyId])
+  @@index([email])
+  @@index([phone])
+  @@index([assignedUserId])
+  @@index([lastInteractionAt])
+  @@index([optInStatus])
+  @@index([isBlacklisted])
+}
+
+model Customer {
+  id               String        @id @default(uuid())
+  companyId        String?
+  company          Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contactId        String?
+  contact          Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  name             String
+  email            String
+  phone            String?
+  status           String        @default("ACTIVE") // ACTIVE, INACTIVE, CHURNED
+  lifetimeValue    Float         @default(0)
+  accountManagerId String?
+  businessUnitId   String?
+  businessUnit     BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+  notes            String?       @db.Text
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  deals         Deal[]
+  invoices      Invoice[]
+  payments      Payment[]
+  rentalOrders  RentalOrder[]
+  amcContracts  AMCContract[]
+  subscriptions SaaSSubscription[]
+  tickets       SupportTicket[]
+  projects      ProjectRecord[]
+  followUps     FollowUp[]
+  paymentLinks  PaymentLink[]
+  meetings      Meeting[]
+
+  @@index([companyId])
+  @@index([email])
+  @@index([status])
+}
+
+// ==========================================
+// 4. PIPELINE, DEALS & FOLLOW-UPS
+// ==========================================
+model Pipeline {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stages PipelineStage[]
+  deals  Deal[]
+
+  @@index([code])
+}
+
+model PipelineStage {
+  id          String   @id @default(uuid())
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int      @default(0)
+  color       String   @default("#802ee3")
+  probability Int      @default(50)
+  isWon       Boolean  @default(false)
+  isLost      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  deals Deal[]
+
+  @@index([pipelineId])
+  @@index([order])
+}
+
+model Deal {
+  id                 String        @id @default(uuid())
+  title              String
+  companyId          String?
+  company            Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contactId          String?
+  contact            Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  customerId         String?
+  customer           Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  pipelineId         String
+  pipeline           Pipeline      @relation(fields: [pipelineId], references: [id], onDelete: Restrict)
+  stageId            String
+  stage              PipelineStage @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  value              Float         @default(0)
+  probability        Int           @default(50)
+  expectedCloseDate  DateTime?
+  assignedToId       String?
+  assignedEmployeeId String?
+  assignedEmployee   Employee?     @relation("DealAssignedEmployee", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  source             String?
+  notes              String?       @db.Text
+  wonDate            DateTime?
+  lostDate           DateTime?
+  lostReason         String?
+  lostNotes          String?       @db.Text
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  enquiry        Enquiry?           @relation("EnquiryToDeal")
+  quotations     Quotation[]
+  proposals      Proposal[]
+  contracts      Contract[]
+  followUps      FollowUp[]
+  stageHistories DealStageHistory[]
+  items          DealItem[]
+  paymentLinks   PaymentLink[]
+  meetings       Meeting[]
+
+  @@index([pipelineId])
+  @@index([stageId])
+  @@index([customerId])
+  @@index([companyId])
+  @@index([assignedToId])
+  @@index([assignedEmployeeId])
+}
+
+model FollowUp {
+  id                 String    @id @default(uuid())
+  title              String
+  dealId             String?
+  deal               Deal?     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  customerId         String?
+  customer           Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  enquiryId          String?
+  enquiry            Enquiry?  @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  type               String    @default("CALL") // CALL, WHATSAPP, EMAIL, MEETING, DEMO, TASK, OTHER
+  status             String    @default("PENDING") // PENDING, COMPLETED, MISSED, CANCELLED, RESCHEDULED
+  scheduledAt        DateTime
+  completedAt        DateTime?
+  assignedToId       String?
+  assignedEmployeeId String?
+  assignedEmployee   Employee? @relation("FollowUpAssignedEmployee", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  assignedToEmail    String?
+  notes              String?   @db.Text
+  outcome            String?   @db.Text
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([status])
+  @@index([scheduledAt])
+  @@index([assignedToId])
+  @@index([assignedEmployeeId])
+  @@index([dealId])
+  @@index([enquiryId])
+  @@index([customerId])
+}
+
+model DealStageHistory {
+  id            String   @id @default(uuid())
+  dealId        String
+  deal          Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  fromStageId   String?
+  toStageId     String
+  changedById   String?
+  durationHours Int?
+  notes         String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([dealId])
+  @@index([toStageId])
+  @@index([createdAt])
+}
+
+model DealItem {
+  id          String   @id @default(uuid())
+  dealId      String
+  deal        Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  serviceName String
+  quantity    Int      @default(1)
+  unitPrice   Float    @default(0)
+  totalPrice  Float    @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([dealId])
+}
+
+model LeadTimelineEvent {
+  id          String   @id @default(uuid())
+  enquiryId   String?
+  dealId      String?
+  customerId  String?
+  type        String // STATUS_CHANGE, NOTE_ADDED, CALL, EMAIL_SENT, WHATSAPP_SENT, MEETING, DEAL_CREATED, DEAL_WON
+  title       String
+  description String?  @db.Text
+  actorEmail  String?
+  metadata    String?  @db.Text
+  createdAt   DateTime @default(now())
+
+  @@index([enquiryId])
+  @@index([dealId])
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// 5. CUSTOM FIELDS & TAGS
+// ==========================================
+model CustomFieldDefinition {
+  id         String   @id @default(uuid())
+  entityType String   @db.VarChar(50) // LEAD, CUSTOMER, DEAL, EMPLOYEE, TICKET, PROJECT
+  fieldName  String   @db.VarChar(50)
+  label      String
+  fieldType  String // TEXT, TEXTAREA, NUMBER, DATE, BOOLEAN, SELECT
+  options    String?  @db.Text
+  isRequired Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  values CustomFieldValue[]
+
+  @@unique([entityType, fieldName])
+  @@index([entityType])
+}
+
+model CustomFieldValue {
+  id        String                @id @default(uuid())
+  fieldId   String                @db.VarChar(50)
+  field     CustomFieldDefinition @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+  entityId  String                @db.VarChar(50)
+  value     String?               @db.Text
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+
+  @@unique([fieldId, entityId])
+  @@index([entityId])
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  color     String   @default("#802ee3")
+  companyId String?  @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  entities EntityTag[]
+
+  @@index([companyId])
+}
+
+model EntityTag {
+  id         String   @id @default(uuid())
+  tagId      String   @db.VarChar(50)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  entityType String   @db.VarChar(50) // LEAD, CUSTOMER, DEAL, PROJECT, ASSET
+  entityId   String   @db.VarChar(50)
+  createdAt  DateTime @default(now())
+
+  @@unique([tagId, entityType, entityId])
+  @@index([entityType, entityId])
+}
+
+// ==========================================
+// 6. SALES & FINANCE
+// ==========================================
+model Quotation {
+  id              String    @id @default(uuid())
+  quotationNumber String    @unique
+  dealId          String?
+  deal            Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  customerId      String?
+  clientName      String
+  clientEmail     String
+  clientPhone     String?
+  companyName     String?
+  subtotal        Float     @default(0)
+  taxRate         Float     @default(18)
+  taxAmount       Float     @default(0)
+  discountAmount  Float     @default(0)
+  totalAmount     Float     @default(0)
+  terms           String?   @db.Text
+  notes           String?   @db.Text
+  validUntil      DateTime?
+  status          String    @default("DRAFT") // DRAFT, SENT, ACCEPTED, REJECTED, EXPIRED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  items QuotationItem[]
+
+  @@index([quotationNumber])
+  @@index([status])
+}
+
+model QuotationItem {
+  id          String    @id @default(uuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float     @default(1)
+  rate        Float     @default(0)
+  amount      Float     @default(0)
+
+  @@index([quotationId])
+}
+
+model Proposal {
+  id             String  @id @default(uuid())
+  proposalNumber String  @unique
+  version        Int     @default(1)
+  parentId       String? // for versioning — original proposal id
+  proposalType   String  @default("WEBSITE_DEVELOPMENT")
+  // WEBSITE_DEVELOPMENT | MOBILE_APP | DIGITAL_MARKETING | SEO | HARDWARE | AMC | CUSTOM_SOFTWARE | SAAS | OTHER
+
+  // ── Proposal Info ──────────────────────
+  title        String
+  proposalDate DateTime  @default(now())
+  validUntil   DateTime?
+  preparedBy   String?
+  branch       String?   @default("TechInPedia")
+
+  // ── Client Details ─────────────────────
+  clientName     String
+  contactPerson  String?
+  clientEmail    String
+  clientPhone    String?
+  clientWhatsApp String?
+  billingAddress String? @db.Text
+  gstin          String?
+
+  // ── CRM Links ──────────────────────────
+  enquiryId      String?
+  enquiry        Enquiry? @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  dealId         String?
+  deal           Deal?    @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  salesExecutive String?
+  leadSource     String?
+
+  // ── Project Details ────────────────────
+  projectName      String?
+  category         String?
+  requirement      String? @db.Text
+  clientObjective  String? @db.Text
+  proposedSolution String? @db.Text
+  executiveSummary String? @db.LongText
+  techStack        String? @db.Text
+
+  // ── Scope of Work ──────────────────────
+  deliverables           String? @db.LongText
+  features               String? @db.LongText
+  includedServices       String? @db.LongText
+  excludedServices       String? @db.LongText
+  thirdPartyIntegrations String? @db.Text
+
+  // ── Timeline ───────────────────────────
+  startDate     DateTime?
+  totalDuration String?
+  milestones    String?   @db.Text
+  deliveryDate  DateTime?
+
+  // ── Pricing Totals ─────────────────────
+  subtotal               Float @default(0)
+  discountAmount         Float @default(0)
+  taxRate                Float @default(18)
+  taxAmount              Float @default(0)
+  totalAdditionalCharges Float @default(0)
+  grandTotal             Float @default(0)
+
+  // ── Payment Terms ──────────────────────
+  advancePercent      Float?
+  paymentMilestones   String? @db.Text
+  finalPaymentPercent Float?
+  dueDays             Int?
+  paymentMethod       String?
+
+  // ── Maintenance ────────────────────────
+  freeSupportPeriod String?
+  amcCharges        String?
+  renewalCharges    String?
+
+  // ── Terms & Notes ──────────────────────
+  revisionLimit   Int?
+  sourceCodeTerms String? @db.Text
+  termsConditions String? @db.LongText
+  internalNotes   String? @db.Text
+  clientNotes     String? @db.Text
+
+  // ── Status & Tracking ──────────────────
+  status              String    @default("DRAFT")
+  // DRAFT | INTERNAL_REVIEW | SENT | VIEWED | NEGOTIATION | ACCEPTED | REJECTED | EXPIRED | CONVERTED
+  sentAt              DateTime?
+  viewedAt            DateTime?
+  acceptedAt          DateTime?
+  rejectedAt          DateTime?
+  rejectionReason     String?   @db.Text
+  acceptedBy          String?
+  acceptedDesignation String?
+  clientSignature     String?
+
+  // ── Manager Approval ───────────────────
+  managerApproved   Boolean @default(false)
+  managerApprovedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items                 ProposalItem[]
+  additionalChargeItems ProposalAdditionalCharge[]
+
+  @@index([proposalNumber])
+  @@index([status])
+  @@index([enquiryId])
+  @@index([dealId])
+}
+
+model ProposalItem {
+  id          String   @id @default(uuid())
+  proposalId  String
+  proposal    Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  sortOrder   Int      @default(0)
+  serviceName String
+  description String?  @db.Text
+  quantity    Float    @default(1)
+  rate        Float    @default(0)
+  discount    Float    @default(0)
+  taxPercent  Float    @default(18)
+  amount      Float    @default(0)
+
+  @@index([proposalId])
+}
+
+model ProposalAdditionalCharge {
+  id         String   @id @default(uuid())
+  proposalId String
+  proposal   Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  label      String
+  amount     Float    @default(0)
+
+  @@index([proposalId])
+}
+
+model Contract {
+  id             String    @id @default(uuid())
+  contractNumber String    @unique
+  dealId         String?
+  deal           Deal?     @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  clientName     String
+  companyName    String?
+  contractType   String    @default("SOFTWARE_DEV") // SOFTWARE_DEV, IT_RENTAL, AMC, MARKETING, SAAS
+  startDate      DateTime
+  endDate        DateTime?
+  renewalDate    DateTime?
+  totalValue     Float     @default(0)
+  status         String    @default("ACTIVE") // DRAFT, ACTIVE, EXPIRED, TERMINATED
+  terms          String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([contractNumber])
+  @@index([status])
+  @@index([renewalDate])
+}
+
+model Invoice {
+  id             String        @id @default(uuid())
+  invoiceNumber  String        @unique
+  customerId     String?
+  customer       Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  clientName     String
+  clientEmail    String
+  companyName    String?
+  issueDate      DateTime      @default(now())
+  dueDate        DateTime
+  subtotal       Float         @default(0)
+  taxRate        Float         @default(18)
+  taxAmount      Float         @default(0)
+  discount       Float         @default(0)
+  totalAmount    Float         @default(0)
+  amountPaid     Float         @default(0)
+  balanceDue     Float         @default(0)
+  status         String        @default("SENT") // DRAFT, SENT, PARTIALLY_PAID, PAID, OVERDUE, CANCELLED
+  notes          String?       @db.Text
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items        InvoiceItem[]
+  payments     Payment[]
+  paymentLinks PaymentLink[]
+
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([dueDate])
+  @@index([customerId])
+}
+
+model InvoiceItem {
+  id          String  @id @default(uuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Float   @default(1)
+  unitPrice   Float   @default(0)
+  amount      Float   @default(0)
+
+  @@index([invoiceId])
+}
+
+model Payment {
+  id                String        @id @default(uuid())
+  paymentLinkId     String?
+  paymentLink       PaymentLink?  @relation(fields: [paymentLinkId], references: [id], onDelete: SetNull)
+  invoiceId         String?
+  invoice           Invoice?      @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  customerId        String?
+  customer          Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  amount            Float
+  currency          String        @default("INR")
+  paymentDate       DateTime      @default(now())
+  paymentMethod     String        @default("BANK_TRANSFER") // BANK_TRANSFER, UPI, CARD, CHEQUE, CASH
+  provider          String        @default("OFFLINE_MANUAL") // RAZORPAY, OFFLINE_MANUAL, BANK_TRANSFER
+  providerPaymentId String?       @unique // Razorpay pay_xxx
+  salesEmployeeId   String?
+  salesEmployee     Employee?     @relation("SalesEmployeePayments", fields: [salesEmployeeId], references: [id], onDelete: SetNull)
+  status            String        @default("SUCCESS") // SUCCESS, REFUNDED, FAILED
+  referenceId       String?
+  rawWebhookPayload String?       @db.LongText
+  notes             String?       @db.Text
+  recordedBy        String?
+  businessUnitId    String?
+  businessUnit      BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+  createdAt         DateTime      @default(now())
+
+  @@index([businessUnitId])
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([paymentDate])
+  @@index([paymentLinkId])
+  @@index([providerPaymentId])
+  @@index([salesEmployeeId])
+}
+
+// ==========================================
+// 6.1 RAZORPAY PAYMENT GATEWAY & LINKS
+// ==========================================
+model PaymentLink {
+  id              String  @id @default(uuid())
+  providerLinkId  String  @unique // Razorpay plink_xxx
+  providerOrderId String?
+  shortUrl        String // https://rzp.io/i/xxx
+
+  amount      Float
+  currency    String  @default("INR")
+  purpose     String // ADVANCE, MILESTONE, AMC, INVOICE, HOSTING, DOMAIN, CUSTOM
+  description String? @db.Text
+  status      String  @default("CREATED") // CREATED, SENT, PARTIALLY_PAID, PAID, EXPIRED, CANCELLED, FAILED
+
+  // Authoritative Staff Attribution (Session-resolved)
+  createdByUserId String
+  createdByUser   User        @relation("CreatedPaymentLinks", fields: [createdByUserId], references: [id])
+  salesEmployeeId String?
+  salesEmployee   Employee?   @relation("SalesAttributedLinks", fields: [salesEmployeeId], references: [id], onDelete: SetNull)
+  departmentId    String?
+  department      Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId          String?
+  team            Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  // Associated Entity Relations
+  customerId      String?
+  customer        Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  enquiryId       String?
+  enquiry         Enquiry?       @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  dealId          String?
+  deal            Deal?          @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  invoiceId       String?
+  invoice         Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  projectRecordId String?
+  projectRecord   ProjectRecord? @relation(fields: [projectRecordId], references: [id], onDelete: SetNull)
+
+  clientName  String?
+  clientEmail String?
+  clientPhone String?
+
+  expiresAt   DateTime?
+  cancelledAt DateTime?
+  paidAt      DateTime?
+
+  providerResponse String?  @db.LongText
+  internalNotes    String?  @db.Text
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  payments Payment[]
+
+  @@index([status])
+  @@index([salesEmployeeId])
+  @@index([departmentId])
+  @@index([teamId])
+  @@index([customerId])
+  @@index([dealId])
+  @@index([invoiceId])
+  @@index([createdAt])
+}
+
+model PaymentWebhookEvent {
+  id           String    @id @default(uuid())
+  eventId      String    @unique // Razorpay x-razorpay-event-id
+  eventType    String // payment_link.paid, payment.captured, etc.
+  signature    String?
+  payloadJson  String    @db.LongText
+  status       String    @default("PENDING") // PENDING, PROCESSED, FAILED, IGNORED
+  errorMessage String?   @db.Text
+  receivedAt   DateTime  @default(now())
+  processedAt  DateTime?
+
+  @@index([eventId])
+  @@index([status])
+  @@index([eventType])
+}
+
+// ==========================================
+// 6.2 MEETINGS & GOOGLE CALENDAR / MEET
+// ==========================================
+model Meeting {
+  id          String  @id @default(uuid())
+  title       String
+  description String? @db.Text
+  meetingType String  @default("GOOGLE_MEET") @db.VarChar(32) // GOOGLE_MEET, PHONE_CALL, OFFICE_MEETING, CLIENT_LOCATION
+  status      String  @default("SCHEDULED") @db.VarChar(32) // SCHEDULED, IN_PROGRESS, COMPLETED, RESCHEDULED, CANCELLED, NO_SHOW
+
+  // Timing & Timezones
+  startTime DateTime
+  endTime   DateTime
+  timezone  String   @default("Asia/Kolkata") @db.VarChar(64)
+
+  // Location & Conferencing
+  location       String? // Physical office address or room
+  conferenceLink String? @db.Text // https://meet.google.com/xxx-yyyy-zzz
+  conferenceId   String? @db.VarChar(64) // Google Meet conference code
+
+  // Google Calendar Integration Details
+  googleEventId    String? @unique @db.VarChar(128) // Google Calendar event ID
+  googleCalendarId String? @db.VarChar(128) // Calendar ID (primary or system)
+  icalUid          String? @db.VarChar(128) // RFC 5545 iCalendar UID
+  htmlLink         String? @db.Text // Web link to Google Calendar UI
+
+  // Business Entity Associations
+  customerId      String?
+  customer        Customer?      @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  contactId       String?
+  contact         Contact?       @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  enquiryId       String?
+  enquiry         Enquiry?       @relation(fields: [enquiryId], references: [id], onDelete: SetNull)
+  dealId          String?
+  deal            Deal?          @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  projectRecordId String?
+  projectRecord   ProjectRecord? @relation(fields: [projectRecordId], references: [id], onDelete: SetNull)
+  departmentId    String?
+  department      Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId          String?
+  team            Team?          @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  // Host & Staff Ownership
+  hostEmployeeId String?
+  hostEmployee   Employee? @relation("MeetingHost", fields: [hostEmployeeId], references: [id], onDelete: SetNull)
+  createdById    String
+  createdByUser  User      @relation("MeetingCreator", fields: [createdById], references: [id])
+
+  // Post-Meeting Tracking
+  outcome         String? @db.VarChar(64) // INTERESTED_PROPOSAL_REQUIRED, FOLLOW_UP_NEEDED, QUALIFIED_OPPORTUNITY, NOT_INTERESTED, DEAL_WON, NO_SHOW
+  outcomeNotes    String? @db.Text
+  followUpTaskId  String?
+  cancelledReason String? @db.Text
+
+  // Auditing
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants MeetingParticipant[]
+
+  @@index([status, startTime])
+  @@index([hostEmployeeId])
+  @@index([customerId])
+  @@index([enquiryId])
+  @@index([dealId])
+  @@index([projectRecordId])
+  @@index([departmentId])
+  @@index([teamId])
+}
+
+model MeetingParticipant {
+  id        String  @id @default(uuid())
+  meetingId String  @db.VarChar(50)
+  meeting   Meeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+
+  employeeId     String?   @db.VarChar(50)
+  employee       Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  email          String    @db.VarChar(100)
+  name           String?
+  role           String    @default("ATTENDEE") @db.VarChar(32) // ORGANIZER, ATTENDEE, OPTIONAL
+  responseStatus String    @default("NEEDS_ACTION") @db.VarChar(32) // NEEDS_ACTION, ACCEPTED, DECLINED, TENTATIVE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // @@unique([meetingId, email])
+  @@index([meetingId])
+  @@index([employeeId])
+}
+
+model Expense {
+  id             String        @id @default(uuid())
+  category       String // INFRASTRUCTURE, HARDWARE, SOFTWARE_SUBSCRIPTIONS, MARKETING, OFFICE, TRAVEL, SALARY
+  vendorName     String?
+  amount         Float
+  taxAmount      Float         @default(0)
+  date           DateTime      @default(now())
+  paymentMethod  String        @default("BANK_TRANSFER")
+  receiptUrl     String?
+  notes          String?       @db.Text
+  status         String        @default("APPROVED") // PENDING, APPROVED, REJECTED
+  approvedBy     String?
+  businessUnitId String?
+  businessUnit   BusinessUnit? @relation(fields: [businessUnitId], references: [id], onDelete: Restrict)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([businessUnitId])
+  @@index([category])
+  @@index([date])
+  @@index([status])
+}
+
+// ==========================================
+// 7. PROJECTS, TASKS & TIMESHEETS
+// ==========================================
+model ProjectRecord {
+  id          String    @id @default(uuid())
+  code        String    @unique
+  name        String
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  managerId   String?
+  managerName String?
+  startDate   DateTime?
+  deadline    DateTime?
+  budget      Float     @default(0)
+  status      String    @default("ACTIVE") // PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED
+  progress    Int       @default(0) // 0 to 100%
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  milestones   Milestone[]
+  tasks        Task[]
+  timesheets   Timesheet[]
+  paymentLinks PaymentLink[]
+  meetings     Meeting[]
+
+  @@index([code])
+  @@index([status])
+  @@index([customerId])
+}
+
+model Milestone {
+  id          String        @id @default(uuid())
+  projectId   String
+  project     ProjectRecord @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  dueDate     DateTime?
+  isCompleted Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  tasks Task[]
+
+  @@index([projectId])
+}
+
+model Task {
+  id             String        @id @default(uuid())
+  projectId      String
+  project        ProjectRecord @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestoneId    String?
+  milestone      Milestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  title          String
+  description    String?       @db.Text
+  assignedUserId String?
+  assignedToName String?
+  priority       String        @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status         String        @default("TODO") // TODO, IN_PROGRESS, REVIEW, DONE
+  startDate      DateTime?
+  dueDate        DateTime?
+  estimatedHours Float         @default(0)
+  actualHours    Float         @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  timesheets Timesheet[]
+
+  @@index([projectId])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedUserId])
+}
+
+model Timesheet {
+  id           String        @id @default(uuid())
+  projectId    String
+  project      ProjectRecord @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  taskId       String?
+  task         Task?         @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  employeeId   String?
+  employeeName String
+  date         DateTime      @default(now())
+  hours        Float
+  description  String?       @db.Text
+  isBillable   Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  @@index([projectId])
+  @@index([date])
+  @@index([employeeId])
+}
+
+// ==========================================
+// 8. HRM (EMPLOYEES, ATTENDANCE, LEAVES, SHIFTS, PAYROLL)
+// ==========================================
+model Department {
+  id               String                   @id @default(uuid())
+  name             String                   @unique
+  code             String?                  @unique
+  description      String?
+  headId           String?
+  head             Employee?                @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+  teams            Team[]
+  employees        Employee[]               @relation("DepartmentEmployees")
+  enquiries        Enquiry[]                @relation("DepartmentEnquiries")
+  paymentLinks     PaymentLink[]
+  meetings         Meeting[]
+  jobOpenings      JobOpening[]
+  kpiTemplates     PerformanceKpiTemplate[]
+  oldDeptPromos    EmployeePromotion[]      @relation("OldDeptPromo")
+  newDeptPromos    EmployeePromotion[]      @relation("NewDeptPromo")
+  recognitionRules RecognitionRule[]
+  jobOffers        JobOffer[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @default(now()) @updatedAt
+}
+
+model Team {
+  id           String        @id @default(uuid())
+  name         String
+  code         String?       @unique
+  description  String?
+  departmentId String
+  department   Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  leaderId     String?
+  leader       Employee?     @relation("TeamLeader", fields: [leaderId], references: [id], onDelete: SetNull)
+  members      Employee[]    @relation("TeamMembers")
+  enquiries    Enquiry[]     @relation("TeamEnquiries")
+  paymentLinks PaymentLink[]
+  meetings     Meeting[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([departmentId])
+  @@index([leaderId])
+}
+
+model Designation {
+  id               String                   @id @default(uuid())
+  title            String                   @unique
+  department       String?
+  description      String?
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @default(now()) @updatedAt
+  employees        Employee[]
+  jobOpenings      JobOpening[]
+  kpiTemplates     PerformanceKpiTemplate[]
+  oldDesigPromos   EmployeePromotion[]      @relation("OldDesigPromo")
+  newDesigPromos   EmployeePromotion[]      @relation("NewDesigPromo")
+  recognitionRules RecognitionRule[]
+  jobOffers        JobOffer[]
+}
+
+model Employee {
+  id            String  @id @default(uuid())
+  employeeCode  String  @unique
+  name          String
+  personalEmail String?
+  companyEmail  String  @unique
+  phone         String?
+  avatar        String? @db.Text
+
+  // Emergency Contact
+  emergencyContactName     String?
+  emergencyContactPhone    String?
+  emergencyContactRelation String?
+
+  // Organization Hierarchy
+  departmentId  String?
+  department    Department?  @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
+  teamId        String?
+  team          Team?        @relation("TeamMembers", fields: [teamId], references: [id], onDelete: SetNull)
+  designationId String?
+  designation   Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  appRoleId     String?
+  appRole       AppRole?     @relation(fields: [appRoleId], references: [id], onDelete: SetNull)
+
+  // Reporting Line
+  managerId     String?
+  manager       Employee?  @relation("EmployeeHierarchy", fields: [managerId], references: [id], onDelete: SetNull)
+  directReports Employee[] @relation("EmployeeHierarchy")
+
+  // Leadership roles
+  teamsLed          Team[]       @relation("TeamLeader")
+  departmentsHeaded Department[] @relation("DepartmentHead")
+
+  // Employment Lifecycle
+  joiningDate      DateTime  @default(now())
+  employmentType   String    @default("FULL_TIME") // FULL_TIME, PART_TIME, INTERN, CONTRACT, FREELANCER
+  workLocation     String    @default("HYBRID") // ON_SITE, REMOTE, HYBRID
+  status           String    @default("ACTIVE") // ACTIVE, PROBATION, NOTICE_PERIOD, RESIGNED, TERMINATED
+  probationMonths  Int       @default(3)
+  probationEndDate DateTime?
+  confirmationDate DateTime?
+  resignationDate  DateTime?
+  lastWorkingDate  DateTime?
+
+  // Shift & Attendance Config
+  shift String @default("REGULAR_DAY") // REGULAR_DAY, MORNING, EVENING, NIGHT
+
+  // Financial & Statutory
+  basicSalary   Float   @default(0)
+  hra           Float   @default(0)
+  allowances    Float   @default(0)
+  grossSalary   Float   @default(0)
+  bankName      String?
+  accountNumber String?
+  ifscCode      String?
+  panNumber     String?
+  aadhaarNumber String?
+
+  // Documents & Notes
+  documentsJson String? @db.Text
+  notes         String? @db.Text
+
+  // Linked User Account (1-to-1)
+  user User? @relation("UserToEmployee")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendance              AttendanceRecord[]
+  leaveRequests           LeaveRequest[]
+  payrolls                PayrollRecord[]
+  assignedEnquiries       Enquiry[]               @relation("EmployeeAssignedEnquiries")
+  assignedDeals           Deal[]                  @relation("DealAssignedEmployee")
+  assignedFollowUps       FollowUp[]              @relation("FollowUpAssignedEmployee")
+  regularizationRequests  RegularizationRequest[] @relation("EmployeeRegularizations")
+  approvedRegularizations RegularizationRequest[] @relation("RegularizationApprover")
+  leaveBalances           LeaveBalance[]          @relation("EmployeeLeaveBalances")
+  salesAttributedLinks    PaymentLink[]           @relation("SalesAttributedLinks")
+  salesEmployeePayments   Payment[]               @relation("SalesEmployeePayments")
+  hostedMeetings          Meeting[]               @relation("MeetingHost")
+  meetingParticipations   MeetingParticipant[]
+  businessUnits           EmployeeBusinessUnit[]
+
+  // HRM & Recruitment Relations
+  hiringManagerJobs       JobOpening[]           @relation("HiringManager")
+  recruiterJobs           JobOpening[]           @relation("JobRecruiter")
+  candidateReferrals      Candidate[]            @relation("CandidateReferrals")
+  candidateRecruiter      Candidate[]            @relation("CandidateRecruiter")
+  interviewCoordinator    Interview[]            @relation("InterviewCoordinator")
+  interviewsAsInterviewer InterviewInterviewer[] @relation("Interviewer")
+  submittedFeedbacks      InterviewFeedback[]    @relation("SubmittedFeedbacks")
+  managedJobOffers        JobOffer[]             @relation("OfferManager")
+
+  // HRM Performance Relations
+  dailyPerformance  EmployeeDailyPerformance[]
+  performanceScores EmployeePerformanceScore[]
+  reviewsReceived   ManagerReview[]            @relation("EmployeeReviewed")
+  reviewsGiven      ManagerReview[]            @relation("Reviewer")
+
+  // HRM Appreciations & Rewards
+  appreciationsReceived EmployeeAppreciation[] @relation("EmployeeAppreciated")
+  appreciationsGiven    EmployeeAppreciation[] @relation("AppreciationGiver")
+  rewardsReceived       EmployeeReward[]       @relation("EmployeeRewarded")
+  rewardsRecommended    EmployeeReward[]       @relation("RewardRecommender")
+  rewardsApproved       EmployeeReward[]       @relation("RewardApprover")
+
+  // HRM Promotions
+  promotionsReceived EmployeePromotion[] @relation("EmployeePromoted")
+  oldManagerPromos   EmployeePromotion[] @relation("OldManagerPromo")
+  newManagerPromos   EmployeePromotion[] @relation("NewManagerPromo")
+  promosRecommended  EmployeePromotion[] @relation("PromoRecommender")
+
+  // HRM Warnings & PIPs
+  warningsReceived EmployeeWarning[]     @relation("EmployeeWarned")
+  warningsIssued   EmployeeWarning[]     @relation("WarningIssuer")
+  pips             EmployeePip[]         @relation("EmployeePip")
+  pipsManaged      EmployeePip[]         @relation("PipManager")
+  pipsHrOwned      EmployeePip[]         @relation("PipHrOwner")
+  careerEvents     EmployeeCareerEvent[] @relation("CareerEvents")
+
+  @@index([employeeCode])
+  @@index([companyEmail])
+  @@index([status])
+  @@index([departmentId])
+  @@index([teamId])
+  @@index([managerId])
+  @@index([appRoleId])
+}
+
+model EmployeeBusinessUnit {
+  id             String       @id @default(uuid())
+  employeeId     String       @db.VarChar(50)
+  businessUnitId String       @db.VarChar(50)
+  employee       Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  businessUnit   BusinessUnit @relation(fields: [businessUnitId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+
+  @@unique([employeeId, businessUnitId])
+  @@index([businessUnitId])
+}
+
+model AttendanceRecord {
+  employeeId           String    @db.VarChar(50)
+  employee             Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date                 DateTime
+  checkIn              DateTime?
+  checkOut             DateTime?
+  totalHours           Float     @default(0)
+  workMinutes          Int       @default(0)
+  status               String    @default("PRESENT") // PRESENT, LATE, HALF_DAY, ABSENT, ON_LEAVE, HOLIDAY, WEEKLY_OFF
+  isLate               Boolean   @default(false)
+  isEarlyExit          Boolean   @default(false)
+  ipAddress            String?
+  device               String?
+  regularized          Boolean   @default(false)
+  regularizationReason String?
+  notes                String?
+  createdAt            DateTime  @default(now())
+
+  @@unique([employeeId, date])
+  @@index([date])
+  @@index([status])
+}
+
+model RegularizationRequest {
+  id                String    @id @default(uuid())
+  employeeId        String
+  employee          Employee  @relation("EmployeeRegularizations", fields: [employeeId], references: [id], onDelete: Cascade)
+  date              DateTime
+  requestedCheckIn  DateTime
+  requestedCheckOut DateTime
+  reason            String    @db.Text
+  status            String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedById      String?
+  approvedBy        Employee? @relation("RegularizationApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  managerNotes      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([date])
+}
+
+model LeaveBalance {
+  employeeId     String   @db.VarChar(50)
+  employee       Employee @relation("EmployeeLeaveBalances", fields: [employeeId], references: [id], onDelete: Cascade)
+  year           Int
+  leaveType      String   @db.VarChar(32) // CASUAL, SICK, PAID, UNPAID
+  totalAllocated Float
+  used           Float    @default(0)
+  pending        Float    @default(0)
+  carriedForward Float    @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([employeeId, year, leaveType])
+  @@index([employeeId])
+  @@index([year])
+}
+
+model LeaveRequest {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType  String   @default("CASUAL") // CASUAL, SICK, PAID, UNPAID, WFH
+  startDate  DateTime
+  endDate    DateTime
+  daysCount  Float    @default(1)
+  reason     String   @db.Text
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  approvedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([employeeId])
+  @@index([status])
+  @@index([startDate])
+}
+
+model Holiday {
+  id         String   @id @default(uuid())
+  name       String
+  date       DateTime @unique
+  isOptional Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([date])
+}
+
+model Shift {
+  id          String   @id @default(uuid())
+  name        String
+  startTime   String
+  endTime     String
+  gracePeriod Int      @default(15) // minutes
+  weeklyOffs  String   @default("Sunday")
+  createdAt   DateTime @default(now())
+}
+
+model PayrollRecord {
+  employeeId         String    @db.VarChar(50)
+  employee           Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  month              Int
+  year               Int
+  basicSalary        Float
+  hra                Float     @default(0)
+  specialAllowance   Float     @default(0)
+  grossSalary        Float     @default(0)
+  totalDaysInMonth   Int       @default(30)
+  presentDays        Float     @default(0)
+  paidLeaveDays      Float     @default(0)
+  unpaidLeaveDays    Float     @default(0)
+  lossOfPayDays      Float     @default(0)
+  lossOfPayDeduction Float     @default(0)
+  taxDeduction       Float     @default(0)
+  otherDeductions    Float     @default(0)
+  allowances         Float     @default(0)
+  bonus              Float     @default(0)
+  deductions         Float     @default(0)
+  netSalary          Float
+  paymentDate        DateTime?
+  status             String    @default("GENERATED") // GENERATED, REVIEWED, APPROVED, PAID, ON_HOLD
+  paymentMode        String? // BANK_TRANSFER, CHEQUE, UPI, CASH
+  referenceNumber    String?
+  reviewedById       String?
+  approvedById       String?
+  notes              String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([employeeId, month, year])
+  @@index([month, year])
+  @@index([status])
+}
+
+// ==========================================
+// 9. SUPPORT TICKETS & KNOWLEDGE BASE
+// ==========================================
+model SupportTicket {
+  id             String    @id @default(uuid())
+  companyId      String?
+  company        Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  ticketNumber   String    @unique
+  customerId     String?
+  customer       Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  clientName     String
+  clientEmail    String
+  subject        String
+  description    String    @db.LongText
+  category       String    @default("TECHNICAL") // HARDWARE_RENTAL, SOFTWARE_BUG, BILLING, GENERAL
+  priority       String    @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  status         String    @default("OPEN") // OPEN, IN_PROGRESS, WAITING_CUSTOMER, RESOLVED, CLOSED
+  assignedTo     String?
+  assignedToName String?
+  slaDueDate     DateTime?
+  resolvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  comments TicketComment[]
+
+  @@index([ticketNumber])
+  @@index([status])
+  @@index([priority])
+  @@index([customerId])
+}
+
+model TicketComment {
+  id         String        @id @default(uuid())
+  ticketId   String
+  ticket     SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  authorName String
+  authorRole String        @default("AGENT") // AGENT, CUSTOMER
+  isInternal Boolean       @default(false)
+  message    String        @db.Text
+  createdAt  DateTime      @default(now())
+
+  @@index([ticketId])
+}
+
+model KnowledgeArticle {
+  id         String   @id @default(uuid())
+  title      String
+  slug       String   @unique
+  category   String   @default("General")
+  content    String   @db.LongText
+  visibility String   @default("INTERNAL") // INTERNAL, CUSTOMER, PUBLIC
+  viewCount  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([slug])
+  @@index([category])
+  @@index([visibility])
+}
+
+// ==========================================
+// 10. HARDWARE RENTALS & AMC
+// ==========================================
+model RentalAsset {
+  id           String    @id @default(uuid())
+  assetCode    String    @unique // e.g. "TIP-MAC-042"
+  serialNumber String    @unique
+  assetType    String // LAPTOP, DESKTOP, WORKSTATION, MONITOR, SERVER, ACCESSORY
+  brand        String // Apple, Dell, Lenovo, HP, Custom
+  model        String // MacBook Pro M3, ThinkPad P16, etc.
+  specs        String    @db.Text
+  purchaseCost Float     @default(0)
+  purchaseDate DateTime?
+  status       String    @default("AVAILABLE") // AVAILABLE, RESERVED, RENTED, MAINTENANCE, RETIRED
+  location     String    @default("Main Warehouse, Delhi NCR")
+  notes        String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  orderItems  RentalOrderItem[]
+  maintenance AssetMaintenance[]
+
+  @@index([assetCode])
+  @@index([serialNumber])
+  @@index([status])
+  @@index([assetType])
+}
+
+model RentalOrder {
+  id              String    @id @default(uuid())
+  orderNumber     String    @unique
+  customerId      String
+  customer        Customer  @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  startDate       DateTime
+  endDate         DateTime?
+  billingCycle    String    @default("MONTHLY") // DAILY, WEEKLY, MONTHLY, QUARTERLY
+  monthlyRate     Float
+  securityDeposit Float     @default(0)
+  deliveryAddress String    @db.Text
+  status          String    @default("ACTIVE") // PENDING, ACTIVE, RETURNED, OVERDUE, CANCELLED
+  agreementRef    String?   @db.Text
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  items    RentalOrderItem[]
+  payments RentalPayment[]
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([customerId])
+}
+
+model RentalPayment {
+  id             String      @id @default(uuid())
+  rentalOrderId  String
+  rentalOrder    RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  cycleMonth     String      // e.g. "2026-10"
+  cycleStartDate DateTime
+  cycleEndDate   DateTime
+  dueDate        DateTime
+  expectedAmount Float
+  paidAmount     Float       @default(0)
+  pendingAmount  Float       @default(0)
+  status         String      @default("PENDING") // PENDING, PARTIAL, PAID, OVERDUE, WAIVED
+  paymentDate    DateTime?
+  paymentMethod  String?     // UPI, BANK_TRANSFER, CASH, CHEQUE
+  paymentType    String?     @default("FULL") // FULL, PARTIAL, ADVANCE
+  transactionRef String?
+  invoiceNumber  String?
+  notes          String?     @db.Text
+  recordedBy     String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([rentalOrderId])
+  @@index([cycleMonth])
+  @@index([status])
+}
+
+model RentalOrderItem {
+  id            String      @id @default(uuid())
+  rentalOrderId String
+  rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  assetId       String
+  asset         RentalAsset @relation(fields: [assetId], references: [id], onDelete: Restrict)
+  rate          Float
+  returnedAt    DateTime?
+
+  @@index([rentalOrderId])
+  @@index([assetId])
+}
+
+model AMCContract {
+  id             String   @id @default(uuid())
+  amcNumber      String   @unique
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  contractTitle  String
+  coveredDevices Int      @default(1)
+  startDate      DateTime
+  endDate        DateTime
+  renewalDate    DateTime
+  visitFrequency String   @default("MONTHLY") // MONTHLY, QUARTERLY, ON_CALL
+  replacementSLA String   @default("24_HOURS") // 4_HOURS, 24_HOURS, NEXT_DAY
+  contractValue  Float
+  status         String   @default("ACTIVE") // ACTIVE, EXPIRED, RENEWED, CANCELLED
+  engineerName   String?
+  notes          String?  @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([amcNumber])
+  @@index([status])
+  @@index([renewalDate])
+  @@index([customerId])
+}
+
+model AssetMaintenance {
+  id           String      @id @default(uuid())
+  assetId      String
+  asset        RentalAsset @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  issue        String      @db.Text
+  repairAction String?     @db.Text
+  cost         Float       @default(0)
+  technician   String?
+  status       String      @default("IN_PROGRESS") // REPORTED, IN_PROGRESS, RESOLVED, SCRAPPED
+  loggedAt     DateTime    @default(now())
+  resolvedAt   DateTime?
+
+  @@index([assetId])
+  @@index([status])
+}
+
+// ==========================================
+// 11. SAAS PRODUCTS, SUBSCRIPTIONS & LICENSES
+// ==========================================
+model SaaSProduct {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?  @db.Text
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  plans         SaaSPlan[]
+  subscriptions SaaSSubscription[]
+  licenses      SoftwareLicense[]
+
+  @@index([code])
+}
+
+model SaaSPlan {
+  id           String      @id @default(uuid())
+  productId    String
+  product      SaaSProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name         String
+  billingCycle String      @default("MONTHLY") // MONTHLY, QUARTERLY, ANNUAL, LIFETIME
+  price        Float
+  features     String?     @db.Text
+  status       String      @default("ACTIVE")
+  createdAt    DateTime    @default(now())
+
+  subscriptions SaaSSubscription[]
+
+  @@index([productId])
+}
+
+model SaaSSubscription {
+  id            String      @id @default(uuid())
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  productId     String
+  product       SaaSProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  planId        String
+  plan          SaaSPlan    @relation(fields: [planId], references: [id], onDelete: Restrict)
+  startDate     DateTime    @default(now())
+  renewalDate   DateTime
+  status        String      @default("ACTIVE") // TRIAL, ACTIVE, PAST_DUE, CANCELLED, EXPIRED
+  price         Float
+  autoRenew     Boolean     @default(true)
+  externalSubId String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([customerId])
+  @@index([productId])
+  @@index([status])
+  @@index([renewalDate])
+}
+
+model SoftwareLicense {
+  id               String      @id @default(uuid())
+  licenseKey       String      @unique
+  customerId       String?
+  productId        String
+  product          SaaSProduct @relation(fields: [productId], references: [id], onDelete: Restrict)
+  domain           String?
+  activationLimit  Int         @default(1)
+  activationsCount Int         @default(0)
+  status           String      @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED, REVOKED
+  issuedAt         DateTime    @default(now())
+  expiresAt        DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([licenseKey])
+  @@index([status])
+  @@index([productId])
+}
+
+// ==========================================
+// 12. AUTOMATION, INTEGRATIONS & AUDIT
+// ==========================================
+model WorkflowRule {
+  id                   String    @id @default(uuid())
+  name                 String
+  description          String?   @db.Text
+  category             String    @default("CRM") // LEADS, DEALS, BILLING, SUPPORT, RENTALS, HRM, WHATSAPP
+  companyId            String?   @db.VarChar(64)
+  status               String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+  version              Int       @default(1)
+  parentWorkflowId     String?
+  trigger              String // e.g. crm.lead.created, crm.deal.stage_changed
+  triggerConfig        String?   @db.Text
+  nodes                String?   @db.LongText
+  edges                String?   @db.LongText
+  conditions           String?   @db.Text
+  actions              String?   @db.Text
+  isActive             Boolean   @default(true)
+  isTemplate           Boolean   @default(false)
+  createdById          String?
+  updatedById          String?
+  totalExecutions      Int       @default(0)
+  successfulExecutions Int       @default(0)
+  failedExecutions     Int       @default(0)
+  lastExecutedAt       DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  executions WorkflowExecution[]
+  jobs       WorkflowJob[]
+
+  @@index([trigger])
+  @@index([status])
+  @@index([isActive])
+  @@index([companyId])
+}
+
+model WorkflowExecution {
+  id              String    @id @default(uuid())
+  workflowId      String
+  workflowVersion Int       @default(1)
+  triggerEvent    String    @default("MANUAL")
+  triggerPayload  String?   @db.LongText
+  idempotencyKey  String?   @unique
+  status          String    @default("PENDING") // PENDING, RUNNING, COMPLETED, FAILED, WAITING, CANCELLED
+  stepCount       Int       @default(0)
+  currentStepId   String?
+  errorLog        String?   @db.LongText
+  durationMs      Int?
+  startedAt       DateTime  @default(now())
+  completedAt     DateTime?
+  resumedAt       DateTime?
+
+  workflow WorkflowRule            @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  steps    WorkflowExecutionStep[]
+  jobs     WorkflowJob[]
+
+  @@index([workflowId])
+  @@index([status])
+  @@index([startedAt])
+}
+
+model WorkflowExecutionStep {
+  id            String   @id @default(uuid())
+  executionId   String
+  nodeId        String
+  nodeType      String // TRIGGER, CONDITION, BRANCH, ACTION, DELAY
+  nodeName      String
+  actionType    String?
+  status        String // SUCCESS, FAILED, SKIPPED, WAITING
+  inputPayload  String?  @db.LongText
+  outputPayload String?  @db.LongText
+  errorDetails  String?  @db.LongText
+  durationMs    Int?
+  retryCount    Int      @default(0)
+  executedAt    DateTime @default(now())
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+
+  @@index([executionId])
+  @@index([nodeId])
+  @@index([status])
+}
+
+model WorkflowJob {
+  id          String    @id @default(uuid())
+  executionId String
+  workflowId  String
+  nodeId      String
+  status      String    @default("PENDING") // PENDING, PROCESSING, COMPLETED, FAILED, RETRYING
+  runAt       DateTime  @default(now())
+  priority    Int       @default(0)
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(3)
+  lastError   String?   @db.Text
+  lockedAt    DateTime?
+  lockedBy    String?
+  payload     String    @db.LongText
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  execution WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  workflow  WorkflowRule      @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@index([status, runAt])
+  @@index([executionId])
+}
+
+model SheetIntegration {
+  id             String    @id @default(uuid())
+  name           String
+  spreadsheetId  String
+  sheetTabName   String    @default("Sheet1")
+  columnMappings String    @db.Text
+  syncDirection  String    @default("INBOUND") // INBOUND, OUTBOUND, BIDIRECTIONAL
+  lastSyncAt     DateTime?
+  status         String    @default("NOT_CONFIGURED") // ACTIVE, ERROR, NOT_CONFIGURED
+  logs           String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model WebhookSubscription {
+  id        String   @id @default(uuid())
+  url       String
+  event     String
+  secretKey String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  deliveries WebhookDeliveryLog[]
+
+  @@index([event])
+  @@index([isActive])
+}
+
+model WebhookDeliveryLog {
+  id             String              @id @default(uuid())
+  subscriptionId String
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  event          String
+  payload        String              @db.Text
+  responseCode   Int?
+  responseBody   String?             @db.Text
+  status         String              @default("DELIVERED")
+  deliveredAt    DateTime            @default(now())
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String?
+  type      String // CRM, SALES, PROJECT, HR, FINANCE, SUPPORT, SAAS, SYSTEM
+  title     String
+  message   String   @db.Text
+  link      String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model ActivityLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  userEmail  String?
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?  @db.Text
+  createdAt  DateTime @default(now())
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([entityType])
+  @@index([createdAt])
+}
+
+model Media {
+  id        String   @id @default(uuid())
+  filename  String
+  url       String
+  mimeType  String
+  size      Int
+  width     Int?
+  height    Int?
+  altText   String?
+  createdAt DateTime @default(now())
+
+  @@index([filename])
+  @@index([mimeType])
+}
+
+model Setting {
+  id        String          @id @default(uuid())
+  key       String          @unique
+  value     String          @db.Text
+  category  SettingCategory @default(COMPANY)
+  updatedAt DateTime        @updatedAt
+
+  @@index([key])
+  @@index([category])
+}
+
+model ChatSession {
+  id          String        @id @default(uuid())
+  userName    String
+  userEmail   String
+  userPhone   String?
+  status      ChatStatus    @default(ACTIVE)
+  lastMessage String?       @db.Text
+  lastSender  MessageSender @default(USER)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  messages ChatMessage[]
+
+  @@index([userEmail])
+  @@index([status])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model ChatMessage {
+  id        String        @id @default(uuid())
+  sessionId String
+  session   ChatSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender    MessageSender @default(USER)
+  message   String        @db.Text
+  emailSent Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// 13. WHATSAPP BUSINESS PLATFORM & META CLOUD API
+// ==========================================
+model WhatsappConnection {
+  id                    String    @id @default(uuid())
+  companyId             String?
+  company               Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  wabaId                String? // WhatsApp Business Account ID
+  phoneNumberId         String
+  businessPhoneNumber   String?
+  displayName           String?
+  appId                 String?
+  appSecretEncrypted    String?   @db.Text
+  accessTokenEncrypted  String    @db.Text
+  verifyToken           String
+  apiVersion            String    @default("v21.0")
+  status                String    @default("DISCONNECTED") // CONNECTED, DISCONNECTED, ERROR
+  qualityRating         String? // GREEN, YELLOW, RED, UNKNOWN
+  messagingLimit        String? // 1K, 10K, 100K, UNLIMITED
+  connectionHealth      String? // HEALTHY, DEGRADED, FAILED
+  lastSuccessfulApiCall DateTime?
+  lastWebhookReceivedAt DateTime?
+  lastError             String?   @db.Text
+  isActive              Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([companyId])
+}
+
+model WhatsappWebhookEvent {
+  id                    String    @id @default(uuid())
+  companyId             String?   @db.VarChar(64)
+  company               Company?  @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  metaEventId           String?   @unique @db.VarChar(128) // Meta message id or status id for strict idempotency
+  eventType             String    @db.VarChar(64) // messages, message_status, account_update, template_update
+  fromPhone             String?   @db.VarChar(32)
+  toPhone               String?   @db.VarChar(32)
+  messageType           String?   @db.VarChar(32) // text, image, document, audio, video, location, interactive
+  payload               String    @db.LongText // masked raw JSON
+  status                String    @default("PENDING") @db.VarChar(32) // PENDING, PROCESSED, FAILED, IGNORED
+  error                 String?   @db.Text
+  retryCount            Int       @default(0)
+  relatedContactId      String?   @db.VarChar(64)
+  relatedLeadId         String?   @db.VarChar(64)
+  relatedConversationId String?   @db.VarChar(64)
+  processedAt           DateTime?
+  createdAt             DateTime  @default(now())
+
+  @@index([metaEventId])
+  @@index([eventType])
+  @@index([fromPhone])
+  @@index([status])
+  @@index([companyId])
+}
+
+model WhatsappConversation {
+  id                     String    @id @default(uuid())
+  companyId              String?   @db.VarChar(64)
+  company                Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  waNumber               String    @db.VarChar(32) // E.164 canonical normalized phone e.g. +919818768680
+  customerName           String?
+  contactId              String?   @db.VarChar(64)
+  leadId                 String?   @db.VarChar(64)
+  customerId             String?   @db.VarChar(64)
+  assignedUserId         String?   @db.VarChar(64)
+  assignedTeam           String?   @default("Sales")
+  status                 String    @default("OPEN") @db.VarChar(32) // OPEN, CLOSED, PENDING
+  priority               String    @default("MEDIUM") @db.VarChar(32) // LOW, MEDIUM, HIGH, URGENT
+  unreadCount            Int       @default(0)
+  lastMessageText        String?   @db.Text
+  lastMessageSender      String    @default("CONTACT") // CONTACT, AGENT, SYSTEM, TEMPLATE
+  lastMessageAt          DateTime  @default(now())
+  lastCustomerActivityAt DateTime? // 24-hour customer care window tracking
+  labels                 String?   @db.Text // JSON array of tags/labels
+  internalNotes          String?   @db.Text
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  assignedAt           DateTime? // Tracks when the chat was assigned
+  assignmentAcceptedAt DateTime? // Tracks when the assigned rep accepted the chat
+  assignmentAcceptedBy String?   // Tracks who accepted it (employee/user ID)
+  firstViewedAt        DateTime? // First time the assigned employee viewed this chat
+  firstResponseAt      DateTime? // First real employee outbound message after assignment
+
+  // ── AI & Chatbot Automation ─────────────
+  isAiPaused             Boolean   @default(false)
+  aiPausedAt             DateTime?
+  aiPausedBy             String?   @db.VarChar(64)
+  lastAiHandoffReason    String?   @db.VarChar(128)
+  lastAiHandoffAt        DateTime?
+  activeChatbotId        String?   @db.VarChar(64)
+  activeChatbotSessionId String?   @db.VarChar(64)
+
+  // ── Template & Package Context Tracking ─────────────
+  selectedPackageIdsJson String?   @db.Text // JSON array e.g. ["1", "2"]
+  lastViewedPackageId    String?   @db.VarChar(64)
+  bookingPackageId       String?   @db.VarChar(64)
+  packageContextJson     String?   @db.Text // JSON snapshot e.g. { selectedPackagePrice: 1388, selectedTemplateId: "..." }
+
+  // ── AI Conversation Orchestration & Handoff State ─────────────
+  handoffState           String?   @default("AI_ACTIVE") @db.VarChar(32) // AI_ACTIVE, HANDOFF_REQUESTED, WAITING_FOR_AGENT, HUMAN_ACTIVE, RETURNED_TO_AI, CLOSED
+  aiStateJson            String?   @db.Text // Structured memory: { current_intent, current_topic, booking_stage, current_package_id, etc. }
+
+  messages WhatsappMessage[]
+
+  @@index([waNumber])
+  @@index([status])
+  @@index([assignedUserId])
+  @@index([leadId])
+  @@index([contactId])
+  @@index([companyId])
+}
+
+model WhatsappMessage {
+  id                String               @id @default(uuid())
+  conversationId    String               @db.VarChar(64)
+  conversation      WhatsappConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  metaMessageId     String?              @unique @db.VarChar(128) // wamid.xxx
+  direction         String               @db.VarChar(16) // INBOUND, OUTBOUND
+  senderType        String               @db.VarChar(16) // CONTACT, AGENT, SYSTEM, TEMPLATE, BOT
+  senderUserId      String?              @db.VarChar(64)
+  type              String               @default("text") @db.VarChar(32) // text, image, document, audio, video, location, interactive, template
+  textBody          String?              @db.Text
+  mediaUrl          String?              @db.Text
+  mimeType          String?              @db.VarChar(128)
+  mediaCaption      String?              @db.Text
+  templateName      String?              @db.VarChar(128)
+  templateVariables String?              @db.Text
+  interactiveData   String?              @db.Text
+  status            String               @default("SENT") @db.VarChar(32) // QUEUED, SENT, DELIVERED, READ, FAILED
+  failureReason     String?              @db.Text
+  errorCode         String?              @db.VarChar(32)
+  campaignId        String?              @db.VarChar(64)
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  createdAt         DateTime             @default(now())
+
+  @@index([conversationId])
+  @@index([metaMessageId])
+  @@index([status])
+  @@index([campaignId])
+}
+
+model WhatsappTemplate {
+  id              String   @id @default(uuid())
+  companyId       String?  @db.VarChar(64)
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  metaTemplateId  String?  @unique @db.VarChar(128)
+  name            String   @db.VarChar(100)
+  language        String   @default("en_US") @db.VarChar(20)
+  category        String   @db.VarChar(50) // MARKETING, UTILITY, AUTHENTICATION
+  status          String   @default("APPROVED") @db.VarChar(32) // APPROVED, PENDING, REJECTED, PAUSED, DISABLED
+  headerType      String?  @db.VarChar(32) // NONE, TEXT, IMAGE, DOCUMENT, VIDEO
+  headerContent   String?  @db.Text
+  bodyText        String   @db.Text
+  footerText      String?  @db.Text
+  buttonsConfig   String?  @db.Text // JSON array of buttons
+  variablesJson   String?  @db.Text // ["1", "2", "3"]
+  crmMappingJson  String?  @db.Text // {"1": "lead.name", "2": "lead.service"}
+  rejectionReason String?  @db.Text
+  lastSyncedAt    DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purposeMappings    WhatsappTemplatePurpose[]
+  packageConfigs     PackageWhatsAppConfig[]
+  buttonActions      WhatsappTemplateButtonAction[]
+  parameterMappings  WhatsappTemplateParameterMapping[]
+
+  @@index([name, language])
+  @@index([status])
+  @@index([category])
+  @@index([companyId])
+}
+
+model WhatsappTemplatePurpose {
+  id            String   @id @default(uuid())
+  companyId     String   @db.VarChar(64)
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  purposeKey    String   @db.VarChar(64) // WELCOME, PACKAGE_MENU, PACKAGE_DETAIL, BOOKING_DETAILS, etc.
+  templateId    String   @db.VarChar(64)
+  template      WhatsappTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  isActive      Boolean  @default(true)
+  configuration String?  @db.Text // JSON config (e.g. fallback strategy, flow config, parameters)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, purposeKey])
+  @@index([companyId])
+  @@index([templateId])
+  @@index([purposeKey])
+}
+
+model PackageWhatsAppConfig {
+  id                     String   @id @default(uuid())
+  companyId              String   @db.VarChar(64)
+  company                Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  packageId              String   @db.VarChar(64) // e.g. "glam_special", "rice_wax_special", etc.
+  packageName            String   @db.VarChar(191)
+  packagePrice           Float    @default(0)
+  servicesSummary        String?  @db.Text // Commercial services summary
+  freeService            String?  @db.VarChar(191) // Free service inclusion (e.g. Free Threading, Free D-Tan)
+  importantNote          String?  @db.Text // Hygiene / salon note
+  selectionKey           String   @db.VarChar(32) // "1", "2", "3", etc.
+  whatsappTemplateId     String   @db.VarChar(64)
+  whatsappTemplate       WhatsappTemplate @relation(fields: [whatsappTemplateId], references: [id], onDelete: Cascade)
+  isActive               Boolean  @default(true)
+  sortOrder              Int      @default(0)
+  templateContentVersion String?  @db.VarChar(64) // Snapshot hash of commercial data when template was linked
+  packageContentVersion  String?  @db.VarChar(64) // Current commercial data hash
+  requiresMetaUpdate     Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([companyId, selectionKey])
+  @@index([companyId])
+  @@index([packageId])
+  @@index([whatsappTemplateId])
+  @@index([selectionKey])
+}
+
+model WhatsappTemplateButtonAction {
+  id            String   @id @default(uuid())
+  companyId     String   @db.VarChar(64)
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  templateId    String   @db.VarChar(64)
+  template      WhatsappTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  buttonIndex   Int      @default(0)
+  buttonLabel   String?  @db.VarChar(100) // Snapshot label for admin reference (e.g. "Book Now", "View Packages")
+  actionKey     String   @db.VarChar(64) // OPEN_PACKAGE_MENU, SELECT_PACKAGE, BOOK_NOW, OPEN_APP_URL, REQUEST_HELP, etc.
+  actionConfig  String?  @db.Text // JSON config (e.g. { "targetUrl": "https://...", "targetPurpose": "PACKAGE_MENU" })
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([companyId, templateId, buttonIndex])
+  @@index([companyId])
+  @@index([templateId])
+  @@index([actionKey])
+}
+
+model WhatsappTemplateParameterMapping {
+  id             String   @id @default(uuid())
+  companyId      String   @db.VarChar(64)
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  templateId     String   @db.VarChar(64)
+  template       WhatsappTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  parameterIndex Int // 1, 2, 3... for {{1}}, {{2}}...
+  sourcePath     String   @db.VarChar(100) // e.g. "package.name", "package.formatted_price", "package.services_text", "package.free_service"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([companyId, templateId, parameterIndex])
+  @@index([companyId])
+  @@index([templateId])
+}
+
+model WhatsappTemplateAuditLog {
+  id          String   @id @default(uuid())
+  companyId   String   @db.VarChar(64)
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actionType  String   @db.VarChar(64) // TEMPLATE_MAPPING_CHANGED, SELECTION_KEY_CHANGED, BUTTON_ACTION_CHANGED, STATUS_CHANGED, CONTENT_OUTDATED_FLAG, FALLBACK_TRIGGERED
+  detailsJson String?  @db.Text
+  performedBy String?  @db.VarChar(100)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([actionType])
+  @@index([createdAt])
+}
+
+
+model WhatsappCampaign {
+  id              String    @id @default(uuid())
+  companyId       String?   @db.VarChar(64)
+  company         Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name            String    @db.VarChar(191)
+  description     String?   @db.Text
+  type            String    @default("MARKETING") @db.VarChar(32) // MARKETING, UTILITY, FOLLOWUP
+  status          String    @default("DRAFT") @db.VarChar(32) // DRAFT, SCHEDULED, PROCESSING, COMPLETED, PAUSED, CANCELLED, FAILED
+  templateId      String    @db.VarChar(64)
+  variableMapping String    @db.Text // JSON mapping
+  audienceSource  String    @db.VarChar(64) // CRM_LEADS, CONTACTS, CUSTOMERS, GOOGLE_SHEET, CSV, CUSTOM_FILTER
+  audienceFilter  String?   @db.Text
+  totalAudience   Int       @default(0)
+  validCount      Int       @default(0)
+  suppressedCount Int       @default(0)
+  attemptedCount  Int       @default(0)
+  sentCount       Int       @default(0)
+  deliveredCount  Int       @default(0)
+  readCount       Int       @default(0)
+  failedCount     Int       @default(0)
+  replyCount      Int       @default(0)
+  scheduledAt     DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdById     String?   @db.VarChar(64)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  recipients WhatsappCampaignRecipient[]
+
+  @@index([status])
+  @@index([templateId])
+  @@index([scheduledAt])
+  @@index([companyId])
+}
+
+model WhatsappCampaignRecipient {
+  id                   String           @id @default(uuid())
+  campaignId           String           @db.VarChar(64)
+  campaign             WhatsappCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  phone                String           @db.VarChar(32)
+  contactId            String?          @db.VarChar(64)
+  leadId               String?          @db.VarChar(64)
+  status               String           @default("PENDING") @db.VarChar(32) // PENDING, QUEUED, PROCESSING, SENT, DELIVERED, READ, FAILED, RETRYING, SKIPPED, SUPPRESSED
+  metaMessageId        String?          @db.VarChar(128)
+  providerMessageId    String?          @db.VarChar(128)
+  errorMessage         String?          @db.Text
+  errorCode            String?          @db.VarChar(32)
+  providerErrorCode    String?          @db.VarChar(32)
+  providerErrorMessage String?          @db.Text
+  attemptCount         Int              @default(0)
+  lastAttemptAt        DateTime?
+  nextRetryAt          DateTime?
+  variablesSent        String?          @db.Text
+  sentAt               DateTime?
+  deliveredAt          DateTime?
+  readAt               DateTime?
+  repliedAt            DateTime?
+
+  @@index([campaignId, status])
+  @@index([phone])
+  @@index([metaMessageId])
+  @@index([nextRetryAt])
+}
+
+model WhatsappSuppression {
+  id         String   @id @default(uuid())
+  companyId  String?  @db.VarChar(64)
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  phone      String   @unique @db.VarChar(32) // E.164 canonical phone e.g. +919818768680
+  status     String   @default("OPTED_OUT") @db.VarChar(32) // OPTED_OUT, OPTED_IN, BOUNCED
+  reason     String?  @db.VarChar(64) // USER_REQUEST, STOP_REPLY, INVALID_NUMBER, COMPLAINT
+  source     String   @db.VarChar(64) // INBOUND_REPLY, ADMIN_MANUAL, IMPORT, API
+  contactId  String?  @db.VarChar(64)
+  addedById  String?  @db.VarChar(64)
+  optedOutAt DateTime @default(now())
+  notes      String?  @db.Text
+
+  @@index([phone])
+  @@index([status])
+  @@index([companyId])
+}
+
+// ==========================================
+// 13B. WHATSAPP MARKETING & CONTACTS
+// ==========================================
+model ContactCustomField {
+  id         String   @id @default(uuid())
+  companyId  String?  @db.VarChar(64)
+  company    Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name       String   @db.VarChar(191)
+  fieldKey   String   @db.VarChar(191)
+  fieldType  String   @default("TEXT") @db.VarChar(32) // TEXT, NUMBER, DATE, BOOLEAN, SELECT, MULTI_SELECT
+  options    String?  @db.Text
+  isRequired Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model ContactSegment {
+  id           String   @id @default(uuid())
+  companyId    String?  @db.VarChar(64)
+  company      Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name         String   @db.VarChar(191)
+  description  String?  @db.Text
+  rulesJson    String   @db.Text
+  isDynamic    Boolean  @default(true)
+  contactCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model ContactList {
+  id          String   @id @default(uuid())
+  companyId   String?  @db.VarChar(64)
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(191)
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members ContactListMember[]
+
+  @@index([companyId])
+}
+
+model ContactListMember {
+  id        String      @id @default(uuid())
+  listId    String      @db.VarChar(191)
+  list      ContactList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  contactId String      @db.VarChar(191)
+  contact   Contact     @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  addedAt   DateTime    @default(now())
+
+  @@unique([listId, contactId])
+  @@index([listId])
+  @@index([contactId])
+}
+
+model DripCampaign {
+  id                 String   @id @default(uuid())
+  companyId          String?  @db.VarChar(64)
+  company            Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name               String   @db.VarChar(191)
+  description        String?  @db.Text
+  status             String   @default("DRAFT") @db.VarChar(32) // DRAFT, ACTIVE, PAUSED, COMPLETED, ARCHIVED
+  triggerType        String   @default("MANUAL") @db.VarChar(64) // CONTACT_ADDED, LEAD_CREATED, LEAD_STAGE_CHANGED, TAG_ADDED, SEGMENT_ENTERED, MANUAL, KEYWORD
+  triggerConfig      String?  @db.Text
+  stepsJson          String   @db.LongText
+  exitConditionsJson String?  @db.Text
+  totalEnrolled      Int      @default(0)
+  activeCount        Int      @default(0)
+  completedCount     Int      @default(0)
+  exitedCount        Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  enrollments DripEnrollment[]
+
+  @@index([companyId])
+  @@index([status])
+}
+
+model DripEnrollment {
+  id            String       @id @default(uuid())
+  campaignId    String       @db.VarChar(191)
+  campaign      DripCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId     String       @db.VarChar(191)
+  contact       Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  currentStepId String?      @db.VarChar(64)
+  status        String       @default("ACTIVE") @db.VarChar(32) // ACTIVE, WAITING, COMPLETED, EXITED, FAILED
+  exitReason    String?      @db.VarChar(191)
+  stateJson     String?      @db.Text
+  enrolledAt    DateTime     @default(now())
+  lastStepAt    DateTime?
+  nextActionAt  DateTime?
+  completedAt   DateTime?
+
+  stepLogs DripStepLog[]
+
+  @@index([campaignId])
+  @@index([contactId])
+  @@index([status, nextActionAt])
+}
+
+model DripStepLog {
+  id           String         @id @default(uuid())
+  enrollmentId String         @db.VarChar(191)
+  enrollment   DripEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  stepId       String         @db.VarChar(64)
+  stepType     String         @db.VarChar(64)
+  status       String         @default("SUCCESS") @db.VarChar(32) // SUCCESS, FAILED, SKIPPED, WAITING
+  payload      String?        @db.Text
+  errorDetails String?        @db.Text
+  executedAt   DateTime       @default(now())
+
+  @@index([enrollmentId])
+}
+
+// ==========================================
+// 14. GOOGLE INTEGRATION & SHEETS CRM SYNC
+// ==========================================
+model GoogleConnection {
+  id                    String    @id @default(uuid())
+  authType              String    @default("SERVICE_ACCOUNT") @db.VarChar(32) // SERVICE_ACCOUNT, OAUTH2
+  clientEmail           String?   @db.VarChar(191)
+  privateKeyEncrypted   String?   @db.Text
+  refreshTokenEncrypted String?   @db.Text
+  accessToken           String?   @db.Text
+  tokenExpiresAt        DateTime?
+  status                String    @default("CONNECTED") @db.VarChar(32)
+  lastTestedAt          DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model GoogleSheetSyncConfig {
+  id                      String    @id @default(uuid())
+  name                    String    @db.VarChar(191)
+  spreadsheetId           String    @db.VarChar(128)
+  sheetName               String    @default("Sheet1") @db.VarChar(128)
+  syncDirection           String    @default("INBOUND") @db.VarChar(32) // INBOUND, OUTBOUND, BIDIRECTIONAL
+  columnMapping           String    @db.Text // JSON mapping
+  defaultPipelineId       String?   @db.VarChar(64)
+  defaultStageId          String?   @db.VarChar(64)
+  defaultSource           String    @default("Google Sheets Sync") @db.VarChar(128)
+  defaultAssigneeId       String?   @db.VarChar(64)
+  assignmentStrategy      String    @default("ROUND_ROBIN") @db.VarChar(32) // ROUND_ROBIN, SPECIFIC_USER, UNASSIGNED
+  tags                    String?   @db.VarChar(191)
+  dedupField              String    @default("PHONE_OR_EMAIL") @db.VarChar(32) // PHONE_OR_EMAIL, EMAIL_ONLY, PHONE_ONLY
+  duplicateAction         String    @default("UPDATE") @db.VarChar(32) // UPDATE, SKIP, CREATE_NEW
+  enableAutoWhatsApp      Boolean   @default(false)
+  whatsAppTemplateId      String?   @db.VarChar(64)
+  autoSyncIntervalMinutes Int       @default(15) // 0 for manual
+  lastSyncAt              DateTime?
+  nextSyncAt              DateTime?
+  lastSyncStatus          String?   @default("IDLE") @db.VarChar(32) // IDLE, RUNNING, COMPLETED, FAILED
+  lastSyncDuration        Int? // ms
+  lastSuccessfulSyncAt    DateTime?
+  rowsProcessed           Int       @default(0)
+  rowsCreated             Int       @default(0)
+  rowsUpdated             Int       @default(0)
+  rowsSkipped             Int       @default(0)
+  rowsFailed              Int       @default(0)
+  lastRowImported         Int       @default(0)
+  status                  String    @default("ACTIVE") @db.VarChar(32) // ACTIVE, PAUSED, ERROR
+  lastError               String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  logs GoogleSheetSyncLog[]
+
+  @@index([status])
+  @@index([spreadsheetId])
+  @@index([nextSyncAt])
+}
+
+model GoogleSheetSyncLog {
+  id                String                @id @default(uuid())
+  configId          String                @db.VarChar(64)
+  config            GoogleSheetSyncConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+  syncType          String                @default("MANUAL") @db.VarChar(32) // MANUAL, SCHEDULED, WEBHOOK, WORKFLOW
+  rowsScanned       Int                   @default(0)
+  leadsCreated      Int                   @default(0)
+  leadsUpdated      Int                   @default(0)
+  duplicatesSkipped Int                   @default(0)
+  errorsCount       Int                   @default(0)
+  details           String?               @db.LongText
+  startedAt         DateTime              @default(now())
+  completedAt       DateTime?
+  status            String                @default("COMPLETED") @db.VarChar(32) // COMPLETED, FAILED, PARTIAL
+
+  @@index([configId])
+  @@index([startedAt])
+}
+
+// ==========================================
+// 15. DURABLE BACKGROUND JOBS & WORKER ARCHITECTURE
+// ==========================================
+model BackgroundJob {
+  id            String    @id @db.VarChar(128) // deterministic e.g. "whatsapp:campaignId:recipientId", "google-sheet-sync:configId"
+  queue         String    @db.VarChar(64) // whatsapp-campaign, whatsapp-message, whatsapp-webhook, google-sheet-sync, workflow-delayed-actions
+  status        String    @default("PENDING") @db.VarChar(32) // PENDING, QUEUED, PROCESSING, COMPLETED, FAILED, RETRYING, DELAYED, CANCELLED
+  payload       String    @db.LongText // JSON
+  result        String?   @db.LongText // JSON
+  attemptCount  Int       @default(0)
+  maxAttempts   Int       @default(3)
+  priority      Int       @default(0) // higher = processed earlier
+  scheduledAt   DateTime? // for delayed / scheduled jobs
+  startedAt     DateTime?
+  completedAt   DateTime?
+  failedAt      DateTime?
+  lastError     String?   @db.Text
+  lockedAt      DateTime?
+  lockedBy      String?   @db.VarChar(128)
+  correlationId String?   @db.VarChar(128)
+  entityType    String?   @db.VarChar(64)
+  entityId      String?   @db.VarChar(64)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([queue, status])
+  @@index([scheduledAt])
+  @@index([lockedAt])
+  @@index([correlationId])
+  @@index([entityType, entityId])
+}
+
+model WorkerHeartbeat {
+  id              String   @id @default(uuid()) @db.VarChar(64)
+  workerId        String   @unique @db.VarChar(128)
+  hostname        String   @db.VarChar(128)
+  pid             Int
+  status          String   @default("ONLINE") @db.VarChar(32) // ONLINE, SHUTTING_DOWN, OFFLINE
+  activeJobsCount Int      @default(0)
+  lastHeartbeatAt DateTime @default(now())
+  startedAt       DateTime @default(now())
+  version         String?  @db.VarChar(32)
+
+  @@index([status])
+  @@index([lastHeartbeatAt])
+}
+
+// ─── STAFF TASK MANAGEMENT (independent of Project module) ──────────────────
+
+model StaffTask {
+  id              String    @id @default(uuid()) @db.VarChar(64)
+  title           String
+  description     String?   @db.Text
+  priority        String    @default("MEDIUM") @db.VarChar(32)
+  status          String    @default("TODO") @db.VarChar(32)
+  dueDate         DateTime?
+  completionNote  String?   @db.Text // Written by employee on completion
+  isRecurring     Boolean   @default(false) // Daily auto-reset task
+  recurringTime   String? // HH:MM for daily reset e.g. "09:00"
+  lastResetAt     DateTime? // Last auto-reset timestamp
+  createdByUserId String? // Admin/manager who created
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  assignees StaffTaskAssignee[]
+  replies   StaffTaskReply[]
+}
+
+model StaffTaskAssignee {
+  id           String    @id @default(uuid()) @db.VarChar(64)
+  taskId       String    @db.VarChar(64)
+  task         StaffTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employeeId   String?   @db.VarChar(64)
+  employeeName String // stored name for display
+  employeeCode String? // employee code
+  assignedAt   DateTime  @default(now())
+}
+
+model StaffTaskReply {
+  id         String    @id @default(uuid()) @db.VarChar(64)
+  taskId     String    @db.VarChar(64)
+  task       StaffTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  authorId   String?   @db.VarChar(64)
+  authorName String // employee or admin name
+  authorRole String    @default("EMPLOYEE") @db.VarChar(32)
+  message    String    @db.Text
+  createdAt  DateTime  @default(now())
+}
+
+// ─── EMPLOYEE TRACKING & INTERNAL CHAT ──────────────────────────────
+
+model EmployeeSession {
+  id           String    @id @default(uuid()) @db.VarChar(64)
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ipAddress    String?   @db.VarChar(45)
+  userAgent    String?   @db.Text
+  loginAt      DateTime  @default(now())
+  logoutAt     DateTime?
+  lastActiveAt DateTime  @default(now())
+  status       String    @default("ONLINE") @db.VarChar(32) // ONLINE, IDLE, OFFLINE
+}
+
+model TeamChat {
+  id        String   @id @default(uuid()) @db.VarChar(64)
+  type      String   @default("DIRECT") @db.VarChar(32) // DIRECT, GROUP
+  name      String?  @db.VarChar(100)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants TeamChatParticipant[]
+  messages     TeamChatMessage[]
+}
+
+model TeamChatParticipant {
+  id       String   @id @default(uuid()) @db.VarChar(64)
+  chatId   String   @db.VarChar(64)
+  chat     TeamChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role     String   @default("MEMBER") @db.VarChar(32) // ADMIN, MEMBER
+  joinedAt DateTime @default(now())
+}
+
+model TeamChatMessage {
+  id       String   @id @default(uuid()) @db.VarChar(64)
+  chatId   String   @db.VarChar(64)
+  chat     TeamChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  senderId String
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content  String   @db.Text
+
+  // References to external entities (Leads/Tasks shared in chat)
+  sharedLeadId String? @db.VarChar(64)
+  sharedTaskId String? @db.VarChar(64)
+
+  createdAt DateTime @default(now())
+
+  reads TeamChatMessageRead[]
+}
+
+model TeamChatMessageRead {
+  id        String          @id @default(uuid()) @db.VarChar(64)
+  messageId String          @db.VarChar(64)
+  message   TeamChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime        @default(now())
+}
+
+// ==========================================
+// 12. HRM - RECRUITMENT & JOB OPENINGS
+// ==========================================
+model JobOpening {
+  id               String       @id @default(uuid())
+  jobId            String       @unique
+  title            String
+  departmentId     String?
+  department       Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId    String?
+  designation      Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  vacancies        Int          @default(1)
+  employmentType   String       @default("FULL_TIME") // FULL_TIME, PART_TIME, INTERNSHIP, CONTRACT, FREELANCE
+  workMode         String       @default("OFFICE") // OFFICE, REMOTE, HYBRID
+  location         String?
+  minExperience    Float?
+  maxExperience    Float?
+  requiredSkills   String?      @db.Text
+  preferredSkills  String?      @db.Text
+  minQualification String?
+  salaryMin        Float?
+  salaryMax        Float?
+  currency         String       @default("INR")
+  hiringManagerId  String?
+  hiringManager    Employee?    @relation("HiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
+  recruiterId      String?
+  recruiter        Employee?    @relation("JobRecruiter", fields: [recruiterId], references: [id], onDelete: SetNull)
+  description      String       @db.LongText
+  responsibilities String?      @db.LongText
+  requirements     String?      @db.LongText
+  benefits         String?      @db.Text
+  openingDate      DateTime     @default(now())
+  closingDate      DateTime?
+  priority         String       @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  internalNotes    String?      @db.Text
+  status           String       @default("OPEN") // DRAFT, OPEN, ON_HOLD, CLOSED, CANCELLED
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  candidates Candidate[]
+  interviews Interview[]
+  offers     JobOffer[]
+}
+
+model Candidate {
+  id                 String      @id @default(uuid())
+  candidateId        String      @unique
+  fullName           String
+  email              String
+  phone              String?
+  whatsappNumber     String?
+  dateOfBirth        DateTime?
+  gender             String?
+  city               String?
+  state              String?
+  address            String?     @db.Text
+  currentCompany     String?
+  currentDesignation String?
+  currentSalary      Float?
+  expectedSalary     Float?
+  totalExperience    Float?
+  relevantExperience Float?
+  noticePeriod       Int? // in days
+  lastWorkingDate    DateTime?
+  skills             String?     @db.Text
+  qualification      String?
+  resumeUrl          String?     @db.Text
+  portfolioUrl       String?     @db.Text
+  linkedinUrl        String?     @db.Text
+  githubUrl          String?     @db.Text
+  source             String      @default("Website")
+  referredById       String?
+  referredBy         Employee?   @relation("CandidateReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  appliedPositionId  String?
+  appliedPosition    JobOpening? @relation(fields: [appliedPositionId], references: [id], onDelete: SetNull)
+  recruiterId        String?
+  recruiter          Employee?   @relation("CandidateRecruiter", fields: [recruiterId], references: [id], onDelete: SetNull)
+  tags               String?     @db.Text
+  notes              String?     @db.Text
+  rating             Int         @default(0)
+  status             String      @default("APPLIED") // APPLIED, SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWING, HR_ROUND, SELECTED, OFFER_SENT, OFFER_ACCEPTED, JOINED, ON_HOLD, REJECTED, WITHDREW, NO_SHOW, OFFER_REJECTED, DID_NOT_JOIN
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  interviews Interview[]
+  offers     JobOffer[]
+}
+
+model Interview {
+  id               String      @id @default(uuid())
+  interviewId      String      @unique
+  candidateId      String
+  candidate        Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpeningId     String?
+  jobOpening       JobOpening? @relation(fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  roundNumber      Int         @default(1)
+  roundName        String
+  type             String      @default("TECHNICAL") // HR_SCREENING, TECHNICAL, MACHINE_TEST, CODING, MANAGER, DIRECTOR, CLIENT, FINAL_HR, CUSTOM
+  date             DateTime
+  startTime        String
+  expectedDuration Int         @default(60) // minutes
+  mode             String      @default("GOOGLE_MEET") // IN_PERSON, PHONE, GOOGLE_MEET, ZOOM, TEAMS, OTHER
+  location         String?     @db.Text
+  meetingLink      String?     @db.Text
+  coordinatorId    String?
+  coordinator      Employee?   @relation("InterviewCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+  reminder         Boolean     @default(true)
+  instructions     String?     @db.Text
+  notes            String?     @db.Text
+  status           String      @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, RESCHEDULED, CANCELLED, NO_SHOW
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  interviewers InterviewInterviewer[]
+  feedbacks    InterviewFeedback[]
+}
+
+model InterviewInterviewer {
+  id          String    @id @default(uuid())
+  interviewId String    @db.VarChar(50)
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  employeeId  String    @db.VarChar(50)
+  employee    Employee  @relation("Interviewer", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, employeeId])
+}
+
+model InterviewFeedback {
+  id            String    @id @default(uuid())
+  interviewId   String    @db.VarChar(50)
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId String    @db.VarChar(50)
+  interviewer   Employee  @relation("SubmittedFeedbacks", fields: [interviewerId], references: [id], onDelete: Cascade)
+
+  communication      Int @default(0) // 1-5
+  technicalKnowledge Int @default(0)
+  problemSolving     Int @default(0)
+  relevantExperience Int @default(0)
+  confidence         Int @default(0)
+  roleUnderstanding  Int @default(0)
+  cultureFit         Int @default(0)
+  leadership         Int @default(0)
+  teamwork           Int @default(0)
+  overallSuitability Int @default(0)
+
+  strengths            String? @db.Text
+  weaknesses           String? @db.Text
+  technicalNotes       String? @db.Text
+  behaviorNotes        String? @db.Text
+  concerns             String? @db.Text
+  salaryRecommendation Float?
+  recommendation       String  @default("HOLD") // STRONG_HIRE, HIRE, HOLD, REJECT
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([interviewId, interviewerId])
+}
+
+model JobOffer {
+  id            String       @id @default(uuid())
+  candidateId   String
+  candidate     Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpeningId  String?
+  jobOpening    JobOpening?  @relation(fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  designationId String?
+  designation   Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  departmentId  String?
+  department    Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  managerId     String?
+  manager       Employee?    @relation("OfferManager", fields: [managerId], references: [id], onDelete: SetNull)
+
+  proposedJoiningDate DateTime
+  salary              Float
+  ctc                 Float?
+  probationMonths     Int      @default(3)
+  employmentType      String   @default("FULL_TIME")
+  workLocation        String   @default("OFFICE")
+  validUntil          DateTime
+  specialTerms        String?  @db.Text
+  hrNotes             String?  @db.Text
+  status              String   @default("DRAFT") // DRAFT, APPROVAL_PENDING, APPROVED, SENT, VIEWED, ACCEPTED, REJECTED, EXPIRED, WITHDRAWN
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// 13. HRM - PERFORMANCE & KPIs
+// ==========================================
+model PerformanceKpiTemplate {
+  id              String       @id @default(uuid())
+  name            String
+  departmentId    String?
+  department      Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId   String?
+  designation     Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  category        String       @default("GENERAL") // SALES, DEV, DESIGN, HR, GENERAL
+  weightPercent   Float        @default(10)
+  target          Float        @default(100)
+  measurementType String       @default("COUNT") // COUNT, PERCENTAGE, REVENUE, RATING, TIME
+  minScore        Float        @default(0)
+  maxScore        Float        @default(100)
+  isAutomatic     Boolean      @default(false)
+  dataSource      String? // e.g. "crm.deals.won", "hr.attendance.late"
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model EmployeeDailyPerformance {
+  employeeId String   @db.VarChar(50)
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime
+
+  // Snapshots
+  checkIn     DateTime?
+  checkOut    DateTime?
+  workMinutes Int       @default(0)
+  isLate      Boolean   @default(false)
+
+  tasksAssigned  Int @default(0)
+  tasksCompleted Int @default(0)
+  tasksPending   Int @default(0)
+  tasksOverdue   Int @default(0)
+
+  leadsAssigned  Int   @default(0)
+  leadsContacted Int   @default(0)
+  followUps      Int   @default(0)
+  meetings       Int   @default(0)
+  dealsWon       Int   @default(0)
+  revenue        Float @default(0)
+
+  targetAchieved Float @default(0)
+  complaints     Int   @default(0)
+  warnings       Int   @default(0)
+  clientFeedback Float @default(0)
+  managerRating  Float @default(0)
+
+  finalScore    Float  @default(0)
+  growthPercent Float  @default(0)
+  status        String @default("STABLE") // EXCELLENT, IMPROVING, STABLE, DECLINING, CRITICAL
+
+  createdAt DateTime @default(now())
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+model EmployeePerformanceScore {
+  id            String   @id @default(uuid())
+  employeeId    String   @db.VarChar(50)
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  periodType    String   @db.VarChar(50) // WEEK, MONTH, QUARTER, YEAR
+  startDate     DateTime
+  endDate       DateTime
+  score         Float    @default(0)
+  growthPercent Float    @default(0)
+  status        String   @default("STABLE")
+  createdAt     DateTime @default(now())
+
+  @@index([employeeId, periodType, startDate])
+}
+
+model ManagerReview {
+  id                 String   @id @default(uuid())
+  employeeId         String
+  employee           Employee @relation("EmployeeReviewed", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewerId         String
+  reviewer           Employee @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  date               DateTime
+  rating             String   @default("AVERAGE") // EXCELLENT, GOOD, AVERAGE, NEEDS_IMPROVEMENT, POOR
+  wentWell           String?  @db.Text
+  improveRequired    String?  @db.Text
+  comments           String?  @db.Text
+  employeeNote       String?  @db.Text
+  privateNote        String?  @db.Text
+  coachingRequired   Boolean  @default(false)
+  warningRecommended Boolean  @default(false)
+  appreciationRec    Boolean  @default(false)
+  pipRecommended     Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model PerformanceThreshold {
+  id         String   @id @default(uuid())
+  label      String // EXCELLENT, IMPROVING, STABLE, DECLINING, CRITICAL
+  minPercent Float
+  maxPercent Float
+  color      String   @default("#000000")
+  createdAt  DateTime @default(now())
+}
+
+// ==========================================
+// 14. HRM - APPRECIATION, REWARDS & PROMOTIONS
+// ==========================================
+model EmployeeAppreciation {
+  id                String   @id @default(uuid())
+  employeeId        String
+  employee          Employee @relation("EmployeeAppreciated", fields: [employeeId], references: [id], onDelete: Cascade)
+  type              String // GOOD_WORK, EXCELLENT_PERFORMANCE, STAR_PERFORMER, MONTH_EMPLOYEE, CLIENT, TARGET, PERFECT_ATTENDANCE, TEAM_PLAYER, INNOVATION, LEADERSHIP, CUSTOM
+  title             String
+  description       String   @db.Text
+  reason            String   @db.Text
+  performancePeriod String?
+  taskId            String?
+  projectId         String?
+  dealId            String?
+  clientId          String?
+  givenById         String
+  givenBy           Employee @relation("AppreciationGiver", fields: [givenById], references: [id], onDelete: Cascade)
+  date              DateTime @default(now())
+  certificateUrl    String?  @db.Text
+  rewardAttached    Boolean  @default(false)
+  visibility        String   @default("COMPANY") // EMPLOYEE_ONLY, DEPARTMENT, COMPANY, HR_ONLY
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+
+  rewards EmployeeReward[]
+}
+
+model EmployeeReward {
+  id                String                @id @default(uuid())
+  employeeId        String
+  employee          Employee              @relation("EmployeeRewarded", fields: [employeeId], references: [id], onDelete: Cascade)
+  type              String // CASH_BONUS, INCENTIVE, GIFT, VOUCHER, PAID_LEAVE, CERTIFICATE, TROPHY, SALARY_INCREMENT, OTHER
+  title             String
+  value             Float                 @default(0)
+  currency          String                @default("INR")
+  reason            String                @db.Text
+  performancePeriod String?
+  appreciationId    String?
+  appreciation      EmployeeAppreciation? @relation(fields: [appreciationId], references: [id], onDelete: SetNull)
+  recommendedById   String?
+  recommendedBy     Employee?             @relation("RewardRecommender", fields: [recommendedById], references: [id], onDelete: SetNull)
+  approvedById      String?
+  approvedBy        Employee?             @relation("RewardApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvalDate      DateTime?
+  rewardDate        DateTime?
+  paymentStatus     String                @default("PENDING") // PENDING, PROCESSING, PAID, CANCELLED
+  payrollLinked     Boolean               @default(false)
+  notes             String?               @db.Text
+  status            String                @default("RECOMMENDED") // RECOMMENDED, MANAGER_APPROVED, HR_REVIEW, MGMT_APPROVED, APPROVED, REJECTED, PROCESSED, DELIVERED
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model EmployeePromotion {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation("EmployeePromoted", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  oldDepartmentId  String?
+  oldDepartment    Department?  @relation("OldDeptPromo", fields: [oldDepartmentId], references: [id], onDelete: SetNull)
+  oldDesignationId String?
+  oldDesignation   Designation? @relation("OldDesigPromo", fields: [oldDesignationId], references: [id], onDelete: SetNull)
+  oldManagerId     String?
+  oldManager       Employee?    @relation("OldManagerPromo", fields: [oldManagerId], references: [id], onDelete: SetNull)
+  oldSalary        Float        @default(0)
+
+  newDepartmentId  String?
+  newDepartment    Department?  @relation("NewDeptPromo", fields: [newDepartmentId], references: [id], onDelete: SetNull)
+  newDesignationId String?
+  newDesignation   Designation? @relation("NewDesigPromo", fields: [newDesignationId], references: [id], onDelete: SetNull)
+  newManagerId     String?
+  newManager       Employee?    @relation("NewManagerPromo", fields: [newManagerId], references: [id], onDelete: SetNull)
+  newSalary        Float        @default(0)
+
+  incrementAmount   Float    @default(0)
+  incrementPercent  Float    @default(0)
+  effectiveDate     DateTime
+  reason            String   @db.Text
+  performancePeriod String?
+  performanceScore  Float?
+
+  recommendedById String?
+  recommendedBy   Employee? @relation("PromoRecommender", fields: [recommendedById], references: [id], onDelete: SetNull)
+  managerComments String?   @db.Text
+  hrComments      String?   @db.Text
+  mgmtComments    String?   @db.Text
+
+  status    String  @default("RECOMMENDED") // RECOMMENDED, MANAGER_APPROVED, HR_REVIEW, MGMT_APPROVED, APPROVED, REJECTED, EXECUTED
+  letterUrl String? @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==========================================
+// 15. HRM - WARNINGS & PIP
+// ==========================================
+model EmployeeWarning {
+  id               String    @id @default(uuid())
+  employeeId       String
+  employee         Employee  @relation("EmployeeWarned", fields: [employeeId], references: [id], onDelete: Cascade)
+  category         String // PERFORMANCE, ATTENDANCE, BEHAVIOUR, MISSED_TARGET, TASK_DELAY, CLIENT_COMPLAINT, POLICY, OTHER
+  severity         String    @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  reason           String    @db.Text
+  details          String    @db.LongText
+  evidenceUrl      String?   @db.Text
+  issuedById       String
+  issuedBy         Employee  @relation("WarningIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+  issueDate        DateTime  @default(now())
+  employeeResponse String?   @db.Text
+  followUpDate     DateTime?
+  resolution       String?   @db.Text
+  status           String    @default("DRAFT") // DRAFT, ISSUED, ACKNOWLEDGED, UNDER_REVIEW, RESOLVED, ESCALATED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+}
+
+model EmployeePip {
+  id                  String   @id @default(uuid())
+  employeeId          String
+  employee            Employee @relation("EmployeePip", fields: [employeeId], references: [id], onDelete: Cascade)
+  reason              String   @db.Text
+  problemDescription  String   @db.LongText
+  currentPerformance  String   @db.Text
+  expectedPerformance String   @db.Text
+  kpiTargets          String   @db.Text
+  startDate           DateTime
+  endDate             DateTime
+  reviewFrequency     String   @default("WEEKLY") // WEEKLY, BIWEEKLY, MONTHLY
+  managerId           String
+  manager             Employee @relation("PipManager", fields: [managerId], references: [id], onDelete: Cascade)
+  hrOwnerId           String
+  hrOwner             Employee @relation("PipHrOwner", fields: [hrOwnerId], references: [id], onDelete: Cascade)
+  improvementActions  String   @db.Text
+  trainingRequired    String?  @db.Text
+  managerNotes        String?  @db.Text
+  employeeComments    String?  @db.Text
+  progress            Int      @default(0) // 0 to 100
+  finalResult         String?  @db.Text
+  status              String   @default("DRAFT") // DRAFT, ACTIVE, IMPROVING, EXTENDED, COMPLETED, FAILED, CANCELLED
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  reviews PipReview[]
+}
+
+model PipReview {
+  id               String      @id @default(uuid())
+  pipId            String
+  pip              EmployeePip @relation(fields: [pipId], references: [id], onDelete: Cascade)
+  date             DateTime    @default(now())
+  kpiProgress      String      @db.Text
+  managerRating    String      @default("AVERAGE") // IMPROVING, NO_CHANGE, DECLINING, SATISFACTORY, UNSATISFACTORY
+  employeeComments String?     @db.Text
+  evidence         String?     @db.Text
+  nextActions      String?     @db.Text
+  createdAt        DateTime    @default(now())
+}
+
+// ==========================================
+// 16. HRM - CAREER TIMELINE & RULES
+// ==========================================
+model EmployeeCareerEvent {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation("CareerEvents", fields: [employeeId], references: [id], onDelete: Cascade)
+  type        String // JOINING, DEPT_CHANGE, DESIG_CHANGE, SALARY_REVISION, PROMOTION, APPRECIATION, BONUS, GIFT, AWARD, WARNING, PIP, PERFORMANCE_REVIEW, TRANSFER, MANAGER_CHANGE, ACHIEVEMENT
+  title       String
+  description String?  @db.Text
+  date        DateTime @default(now())
+  metadata    String?  @db.Text // JSON string for extra fields
+  createdAt   DateTime @default(now())
+}
+
+model RecognitionRule {
+  id            String       @id @default(uuid())
+  name          String
+  condition     String // JSON logic or string representation
+  threshold     String // Threshold value
+  action        String // RECOMMEND_APPRECIATION, RECOMMEND_PROMOTION, RECOMMEND_BONUS
+  departmentId  String?
+  department    Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  designationId String?
+  designation   Designation? @relation(fields: [designationId], references: [id], onDelete: Cascade)
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// ==========================================
+// 17. URBAN MARKETPLACE - VENDOR 360 PROFILE SUITE
+// ==========================================
+model MarketplaceVendor {
+  id                String   @id @default(uuid())
+  companyId         String?
+  enquiryId         String?
+  slug              String   @unique
+  businessName      String
+  tagline           String?
+  description       String?  @db.Text
+  logoUrl           String?  @db.Text
+  coverImageUrl     String?  @db.Text
+  ownerName         String?
+  phone             String
+  whatsappNumber    String?
+  email             String?
+  website           String?
+  address           String?  @db.Text
+  locality          String?
+  city              String   @default("Delhi NCR")
+  state             String?  @default("Delhi")
+  pincode           String?
+  establishmentYear Int?     @default(2020)
+  businessType      String   @default("SERVICE_PROVIDER") // SERVICE_PROVIDER, DEALER, MANUFACTURER, WHOLESALER
+  primaryCategory   String   @default("AC Repair & Services")
+  categories        String?  @db.Text // JSON array e.g. ["AC Repair & Services", "AC Installation"]
+  openingHours      String?  @db.Text // JSON string
+  gstin             String?
+  kycStatus         String   @default("PENDING") // PENDING, VERIFIED, REJECTED
+  kycDocuments      String?  @db.Text // JSON array of uploaded documents
+  membershipTier    String   @default("STARTER") // STARTER, GROWTH, ENTERPRISE
+  leadCredits       Int      @default(10)
+  isClaimed         Boolean  @default(true)
+  isVerified        Boolean  @default(false)
+  isFeatured        Boolean  @default(false)
+  averageRating     Decimal  @default(4.50) @db.Decimal(3, 2)
+  ratingCount       Int      @default(12)
+  reviewCount       Int      @default(12)
+  quickInfo         String?  @db.Text // JSON string: paymentModes, parking, etc.
+  status            String   @default("ACTIVE") // ACTIVE, INACTIVE, SUSPENDED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  media    MarketplaceVendorMedia[]
+  services MarketplaceVendorService[]
+  reviews  MarketplaceVendorReview[]
+
+  @@index([city])
+  @@index([primaryCategory])
+  @@index([kycStatus])
+  @@index([status])
+  @@index([isVerified])
+}
+
+model MarketplaceVendorMedia {
+  id             String            @id @default(uuid())
+  vendorId       String
+  vendor         MarketplaceVendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  mediaType      String            @default("PHOTO") // PHOTO, VIDEO, SCANNED_RATE_CARD, DOCUMENT
+  sourceCategory String            @default("OWNER") // OWNER, CUSTOMER, OFFICE, WORK_PORTFOLIO
+  url            String            @db.Text
+  thumbnailUrl   String?           @db.Text
+  title          String?
+  displayOrder   Int               @default(0)
+  createdAt      DateTime          @default(now())
+
+  @@index([vendorId])
+  @@index([mediaType])
+}
+
+model MarketplaceVendorService {
+  id           String            @id @default(uuid())
+  vendorId     String
+  vendor       MarketplaceVendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  title        String
+  description  String?           @db.Text
+  price        Decimal           @default(0.00) @db.Decimal(10, 2)
+  priceUnit    String            @default("onwards / visit") // onwards / visit, per unit, per sqft
+  duration     String?
+  imageUrl     String?           @db.Text
+  isPopular    Boolean           @default(false)
+  displayOrder Int               @default(0)
+  status       String            @default("ACTIVE")
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@index([vendorId])
+}
+
+model MarketplaceVendorReview {
+  id            String            @id @default(uuid())
+  vendorId      String
+  vendor        MarketplaceVendor @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  reviewerName  String
+  reviewerPhone String?
+  rating        Int               @default(5)
+  comment       String            @db.Text
+  reviewTags    String?           @db.Text // JSON array e.g. ["Reasonably priced", "Excellent service"]
+  ownerReply    String?           @db.Text
+  status        String            @default("APPROVED") // APPROVED, PENDING, HIDDEN
+  createdAt     DateTime          @default(now())
+
+  @@index([vendorId])
+  @@index([status])
+}
+
+// ==========================================
+// 18. URBAN MARKETPLACE - DYNAMIC CATEGORIES
+// ==========================================
+model MarketplaceCategory {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  mode            String   @default("B2C") // B2C, B2B
+  parentId        String?
+  tagline         String?
+  iconName        String   @default("Wrench")
+  popularItems    String?  @db.Text // JSON array e.g. ["Deep Jet Cleaning", "Gas Leakage Fix"]
+  metaTitle       String?
+  metaDescription String?  @db.Text
+  displayOrder    Int      @default(0)
+  status          String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([mode])
+  @@index([status])
+  @@index([slug])
+  @@index([parentId])
+}
+
+// ==========================================
+// 19. SLA RULES — Configurable per Company
+// ==========================================
+model SlaRule {
+  id          String   @id @default(uuid())
+  companyId   String?  @db.VarChar(64)
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // What this rule applies to
+  entityType  String   @db.VarChar(32) // LEAD, WHATSAPP_CHAT, TICKET
+  // What action this governs
+  actionType  String   @db.VarChar(64) // ACCEPTANCE, FIRST_RESPONSE, RESOLUTION
+  // Priority tier this rule applies to
+  priority    String   @default("NORMAL") @db.VarChar(32) // NORMAL, HIGH, URGENT, VIP
+  
+  // Time limits in minutes
+  warningMinutes Int   @default(8)   // Show warning at this point
+  breachMinutes  Int   @default(10)  // SLA breached at this point
+  
+  // Auto-escalation actions (comma-separated)
+  // NOTIFY_EMPLOYEE, NOTIFY_MANAGER, NOTIFY_OWNER, AUTO_REASSIGN, RETURN_TO_QUEUE
+  escalationActions String? @db.Text
+  
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([companyId, entityType, actionType, priority])
+  @@index([companyId])
+}
+
+// ==========================================
+// 20. RESOURCE VISIBILITY — Reusable for Leads & WhatsApp
+// ==========================================
+model ResourceVisibility {
+  id           String   @id @default(uuid())
+  companyId    String   @db.VarChar(64)
+  
+  // Polymorphic resource reference
+  resourceType String   @db.VarChar(32) // LEAD, WHATSAPP_CONVERSATION
+  resourceId   String   @db.VarChar(64)
+  
+  // Visibility policy
+  visibilityType String  @db.VarChar(64)
+  // ASSIGNED_ONLY, SELECTED_EMPLOYEES, SELECTED_TEAM, SELECTED_DEPARTMENT,
+  // MANAGERS_ONLY, OWNER_ONLY, ALL_AUTHORIZED, HIDDEN
+  
+  // Selected employee / team / department IDs (JSON arrays)
+  employeeIds  String?  @db.Text  // JSON array of user IDs
+  teamIds      String?  @db.Text  // JSON array of team IDs
+  departmentIds String? @db.Text  // JSON array of department IDs
+
+  setByUserId  String?  @db.VarChar(64)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([resourceType, resourceId])
+  @@index([companyId, resourceType])
+  @@index([resourceId])
+}
+
+// ==========================================
+// 21. REASSIGNMENT HISTORY — Never overwrite, always append
+// ==========================================
+model ReassignmentHistory {
+  id              String   @id @default(uuid())
+  companyId       String?  @db.VarChar(64)
+  
+  // Polymorphic
+  resourceType    String   @db.VarChar(32) // LEAD, WHATSAPP_CONVERSATION
+  resourceId      String   @db.VarChar(64)
+  
+  fromUserId      String?  @db.VarChar(64) // previous assignee
+  toUserId        String   @db.VarChar(64) // new assignee
+  reassignedBy    String   @db.VarChar(64) // who performed the reassignment
+  reason          String?  @db.VarChar(64) // NO_RESPONSE, SLA_BREACHED, etc.
+  notes           String?  @db.Text
+  
+  createdAt       DateTime @default(now())
+
+  @@index([resourceType, resourceId])
+  @@index([companyId])
+  @@index([toUserId])
+}
+
+// ==========================================
+// 22. EMPLOYEE LIVE STATUS — Application-level only
+// ==========================================
+model EmployeeStatus {
+  id              String   @id @default(uuid())
+  userId          String   @unique @db.VarChar(64)
+  companyId       String?  @db.VarChar(64)
+  
+  // Current status
+  status          String   @default("OFFLINE") @db.VarChar(32)
+  // ONLINE, OFFLINE, AVAILABLE, BUSY, HANDLING_LEAD, HANDLING_CHAT, HANDLING_TICKET, ON_BREAK, ON_LEAVE
+  
+  // Current active work
+  currentLeadId   String?  @db.VarChar(64)
+  currentChatId   String?  @db.VarChar(64)
+  currentTicketId String?  @db.VarChar(64)
+  
+  lastActivityAt  DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// ==========================================
+// 23. WHATSAPP CHATBOT BUILDER & FLOW SESSIONS
+// ==========================================
+model WhatsappChatbot {
+  id                 String           @id @default(uuid())
+  companyId          String?          @db.VarChar(64)
+  company            Company?         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name               String           @db.VarChar(128)
+  description        String?          @db.Text
+  triggerType        String           @default("KEYWORD") @db.VarChar(32) // NEW_CONVERSATION, KEYWORD, CAMPAIGN, MANUAL, INTENT
+  triggerKeywords    String?          @db.Text // JSON Array of keyword strings
+  triggerIntent      String?          @db.VarChar(64)
+  status             String           @default("DRAFT") @db.VarChar(32) // DRAFT, ACTIVE, PAUSED, ARCHIVED
+  isDefault          Boolean          @default(false)
+  
+  draftVersion       Int              @default(1)
+  publishedVersion   Int              @default(0)
+  nodesJson          String           @db.MediumText // Draft flow nodes
+  edgesJson          String?          @db.MediumText // Draft flow edges
+  publishedNodesJson String?          @db.MediumText // Active published nodes
+  publishedEdgesJson String?          @db.MediumText // Active published edges
+  
+  createdById        String?          @db.VarChar(64)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  sessions           ChatbotSession[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([triggerType])
+}
+
+model ChatbotSession {
+  id             String          @id @default(uuid())
+  botId          String          @db.VarChar(64)
+  bot            WhatsappChatbot @relation(fields: [botId], references: [id], onDelete: Cascade)
+  companyId      String?         @db.VarChar(64)
+  contactId      String?         @db.VarChar(64)
+  contact        Contact?        @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  conversationId String?         @db.VarChar(64)
+  currentNodeId  String          @db.VarChar(64)
+  variablesJson  String?         @db.Text // JSON Map of session variables
+  status         String          @default("ACTIVE") @db.VarChar(32) // ACTIVE, WAITING_FOR_USER, WAITING_FOR_DELAY, HANDED_OFF, COMPLETED, FAILED, CANCELLED
+  handoffReason  String?         @db.VarChar(128)
+  assignedUserId String?         @db.VarChar(64)
+  startedAt      DateTime        @default(now())
+  lastStepAt     DateTime        @default(now())
+  completedAt    DateTime?
+
+  @@index([botId])
+  @@index([companyId])
+  @@index([conversationId])
+  @@index([contactId])
+  @@index([status])
+}
+
+// ==========================================
+// 24. AI BRAIN & TENANT CONFIGURATION
+// ==========================================
+model AiConfig {
+  id                      String   @id @default(uuid())
+  companyId               String   @unique @db.VarChar(64)
+  company                 Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  // Provider & Model
+  provider                String   @default("OPENAI") @db.VarChar(32) // OPENAI, ANTHROPIC, GEMINI, CUSTOM
+  model                   String   @default("gpt-4o-mini") @db.VarChar(64)
+  apiKeyEncrypted         String?  @db.Text
+  keyStrategy             String   @default("PLATFORM_MANAGED") @db.VarChar(32) // PLATFORM_MANAGED, TENANT_PROVIDED
+  fallbackProvider        String?  @db.VarChar(32)
+  fallbackModel           String?  @db.VarChar(64)
+  temperature             Float    @default(0.7)
+  maxTokens               Int      @default(500)
+  
+  // Usage limits & quotas
+  monthlyTokenLimit       Int      @default(500000)
+  dailyRequestLimit       Int      @default(2000)
+  maxCostMonthly          Float    @default(50.0)
+  currentMonthTokens      Int      @default(0)
+  currentDayRequests      Int      @default(0)
+  enabled                 Boolean  @default(true)
+  
+  // Persona & Tone
+  botName                 String   @default("Assistant") @db.VarChar(64)
+  role                    String   @default("Customer Support & Sales") @db.VarChar(128)
+  primaryTone             String   @default("Professional & Corporate") @db.VarChar(64)
+  basePersonality         String?  @db.Text
+  dynamicPersonaEnabled   Boolean  @default(false)
+  
+  // Brand Context
+  brandName               String?  @db.VarChar(128)
+  brandDescription        String?  @db.Text
+  productsSummary         String?  @db.Text
+  workingHours            String?  @db.Text
+  supportPolicies         String?  @db.Text
+  refundPolicy            String?  @db.Text
+  disclaimers             String?  @db.Text
+  defaultLanguage         String   @default("en") @db.VarChar(16)
+  allowedLanguages        String?  @db.Text // JSON Array of ISO codes
+  
+  // Guardrails & Policy
+  responsePolicy          String   @default("PREFER_KNOWLEDGE") @db.VarChar(32) // KNOWLEDGE_ONLY, PREFER_KNOWLEDGE, GENERAL_FALLBACK
+  autoHandoffOnFrustration Boolean @default(true)
+  handoffThresholdScore   Float    @default(0.7)
+  toolsEnabledJson        String?  @db.Text // JSON array of enabled tool keys
+  handoffMessage          String?  @db.Text // Message shown to user upon human handoff
+  offlineMessage          String?  @db.Text // Message shown when query arrives outside business hours
+  routingDepartment       String?  @default("SALES") @db.VarChar(64) // Default escalation team: SALES, SUPPORT, BILLING
+  
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+// ==========================================
+// 25. AI KNOWLEDGE BASE & RETRIEVAL
+// ==========================================
+model AiKnowledgeBase {
+  id          String             @id @default(uuid())
+  companyId   String?            @db.VarChar(64)
+  company     Company?           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sourceType  String             @default("MANUAL_QA") @db.VarChar(32) // MANUAL_QA, FAQ, TEXT, DOCUMENT, URL
+  title       String             @db.VarChar(255)
+  content     String             @db.MediumText
+  category    String?            @db.VarChar(64)
+  tags        String?            @db.Text // JSON array
+  priority    Int                @default(10)
+  status      String             @default("ACTIVE") @db.VarChar(32) // DRAFT, ACTIVE, ARCHIVED
+  syncStatus  String             @default("READY") @db.VarChar(32) // PENDING, PROCESSING, READY, FAILED, OUTDATED
+  version     Int                @default(1)
+  totalChunks Int                @default(1)
+  fileUrl     String?            @db.Text
+  fileName    String?            @db.VarChar(255)
+  fileMime    String?            @db.VarChar(64)
+  createdById String?            @db.VarChar(64)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  chunks      AiKnowledgeChunk[]
+
+  @@index([companyId])
+  @@index([sourceType])
+  @@index([status])
+}
+
+model AiKnowledgeChunk {
+  id              String           @id @default(uuid())
+  knowledgeBaseId String           @db.VarChar(64)
+  knowledgeBase   AiKnowledgeBase  @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+  companyId       String?          @db.VarChar(64)
+  chunkIndex      Int              @default(0)
+  content         String           @db.MediumText
+  metadata        String?          @db.Text // JSON metadata
+  tokenCount      Int              @default(0)
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([knowledgeBaseId])
+  @@index([companyId])
+  @@index([isActive])
+}
+
+model AiKnowledgeSuggestion {
+  id             String    @id @default(uuid())
+  companyId      String?   @db.VarChar(64)
+  company        Company?  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  question       String    @db.Text
+  proposedAnswer String    @db.Text
+  frequency      Int       @default(1)
+  sourceQuery    String?   @db.Text
+  status         String    @default("PENDING") @db.VarChar(32) // PENDING, APPROVED, REJECTED
+  reviewedById   String?   @db.VarChar(64)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([companyId])
+  @@index([status])
+}
+
+// ==========================================
+// 26. AI GOALS
+// ==========================================
+model AiGoal {
+  id                  String   @id @default(uuid())
+  companyId           String?  @db.VarChar(64)
+  company             Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  goalKey             String   @db.VarChar(64) // CAPTURE_LEAD, QUALIFY_LEAD, BOOK_APPOINTMENT, SUPPORT_RESOLVE
+  name                String   @db.VarChar(128)
+  description         String?  @db.Text
+  priority            Int      @default(5)
+  successCriteriaJson String?  @db.Text // JSON criteria
+  allowedActionsJson  String?  @db.Text // JSON array of allowed actions
+  handoffBehavior     String   @default("CONTINUE") @db.VarChar(32) // CONTINUE, HANDOFF_ON_SUCCESS, STOP
+  isEnabled           Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([goalKey])
+  @@index([isEnabled])
+}
+
+// ==========================================
+// 27. AI INTENTS & INTENT ROUTING
+// ==========================================
+model AiIntent {
+  id                    String   @id @default(uuid())
+  companyId             String?  @db.VarChar(64)
+  company               Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name                  String   @db.VarChar(64) // pricing_query, human_agent, etc.
+  description           String?  @db.Text
+  exampleUtterancesJson String   @db.Text // JSON Array of sample user utterances
+  priority              Int      @default(5) // Higher executes first
+  isEnabled             Boolean  @default(true)
+  actionType            String   @default("AI_RESPONSE") @db.VarChar(64) // TRIGGER_CHATBOT, SEND_REPLY, SEND_TEMPLATE, ASSIGN_EMPLOYEE, HUMAN_HANDOFF, START_DRIP
+  actionPayloadJson     String?  @db.Text // JSON configuration for action
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([companyId])
+  @@index([name])
+  @@index([isEnabled])
+}
+
+// ==========================================
+// 28. AI USAGE AUDIT & LOGGING
+// ==========================================
+model AiUsageLog {
+  id               String   @id @default(uuid())
+  companyId        String?  @db.VarChar(64)
+  company          Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  conversationId   String?  @db.VarChar(64)
+  contactId        String?  @db.VarChar(64)
+  contact          Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  provider         String   @db.VarChar(32)
+  model            String   @db.VarChar(64)
+  feature          String   @db.VarChar(64) // CHATBOT, COPILOT, INTENT_DETECTION, SUMMARY, LEAD_QUALIFICATION
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalTokens      Int      @default(0)
+  estimatedCost    Float    @default(0.0)
+  latencyMs        Int      @default(0)
+  isFallback       Boolean  @default(false)
+  intent           String?  @db.VarChar(64)
+  confidence       Float?   @default(1.0)
+  toolsCalled      String?  @db.Text // JSON array of tool names called
+  retrievedKnowledgeIds String? @db.Text // JSON array of chunk IDs
+  handoffDecision  String?  @db.VarChar(64) // HANDOFF, ACTION, ANSWER, CLARIFICATION
+  error            String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  @@index([companyId])
+  @@index([feature])
+  @@index([createdAt])
+}
+
+model AiFeedback {
+  id          String   @id @default(uuid())
+  companyId   String?  @db.VarChar(64)
+  company     Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  messageId   String?  @db.VarChar(64)
+  rating      String   @db.VarChar(32) // HELPFUL, INCORRECT, NEEDS_IMPROVEMENT
+  correction  String?  @db.Text
+  createdById String?  @db.VarChar(64)
+  createdAt   DateTime @default(now())
+
+  @@index([companyId])
+  @@index([rating])
+}
+

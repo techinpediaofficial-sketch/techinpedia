@@ -1,0 +1,38 @@
+DirectoryIndex disabled
+
+# Override default cPanel error pages to prevent directfwd malware/parking script injections
+ErrorDocument 400 "Bad Request"
+ErrorDocument 401 "Unauthorized"
+ErrorDocument 403 "Forbidden"
+ErrorDocument 404 "Not Found"
+ErrorDocument 500 "Internal Server Error"
+ErrorDocument 502 "Bad Gateway"
+ErrorDocument 503 "Service Unavailable"
+
+<IfModule mod_headers.c>
+  Header always set Content-Security-Policy "upgrade-insecure-requests;"
+  RequestHeader set X-Forwarded-Proto "https"
+  RequestHeader set X-Forwarded-Port "443"
+</IfModule>
+
+RewriteEngine On
+
+# Ensure Let's Encrypt can verify
+RewriteCond %{REQUEST_URI} ^/\.well-known/acme-challenge/
+RewriteRule .* - [L]
+
+# Redirect WWW to non-WWW and .in to .com
+RewriteCond %{HTTP_HOST} ^www\.techinpedia\.com$ [NC,OR]
+RewriteCond %{HTTP_HOST} ^techinpedia\.in$ [NC,OR]
+RewriteCond %{HTTP_HOST} ^www\.techinpedia\.in$ [NC]
+RewriteRule ^(.*)$ https://techinpedia.com/$1 [L,R=301,QSA]
+
+# Redirect HTTP to HTTPS for techinpedia.com specifically
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP_HOST} ^techinpedia\.com$ [NC]
+RewriteRule ^(.*)$ https://techinpedia.com/$1 [L,R=301,QSA]
+
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule ^(.*)$ ws://127.0.0.1:3000/$1 [P,L]
+
+RewriteRule ^(.*)$ http://127.0.0.1:3000/$1 [P,L,QSA]

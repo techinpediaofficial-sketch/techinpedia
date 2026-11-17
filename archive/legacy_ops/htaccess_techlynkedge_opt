@@ -1,0 +1,42 @@
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION BEGIN
+PassengerAppRoot "/home/xxfeszkb/techinpedia.in"
+PassengerBaseURI "/"
+PassengerNodejs "/home/xxfeszkb/nodevenv/techinpedia.in/20/bin/node"
+PassengerAppType node
+PassengerStartupFile server.js
+# DO NOT REMOVE. CLOUDLINUX PASSENGER CONFIGURATION END
+
+# 301 PERMANENT REDIRECTS FOR SEO & HTTPS & STATIC BYPASS
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Directly serve static Next.js assets, images, verification files via Apache (Skips Node.js for static requests!)
+RewriteRule ^(_next/static/|images/|logo\.png|favicon\.ico|icon\.png|apple-icon\.png|google[a-f0-9]+\.html|sitemap\.xml|robots\.txt|unzip\.php|kill\.php)$ - [L]
+
+RewriteCond %{HTTPS} off [OR]
+RewriteCond %{HTTP_HOST} ^www\. [NC]
+RewriteCond %{HTTP_HOST} ^(?:www\.)?(.*)$ [NC]
+RewriteRule ^(.*)$ https://techinpedia.in/$1 [R=301,L]
+</IfModule>
+
+# SHARED HOSTING NPROC & THREAD THROTTLING OPTIMIZATIONS
+PassengerAppEnv production
+PassengerMaxInstancesPerApp 1
+PassengerMinInstances 0
+PassengerPoolIdleTime 10
+PassengerMaxPreloaderIdleTime 0
+PassengerStatThrottleRate 10
+
+# CLOUDLINUX & LITESPEED ENVIRONMENT VARIABLES
+<IfModule Litespeed>
+SetEnv NODE_ENV production
+SetEnv NEXT_TELEMETRY_DISABLED 1
+SetEnv UV_THREADPOOL_SIZE 2
+SetEnv NODE_OPTIONS "--max-old-space-size=256 --v8-pool-size=2"
+</IfModule>
+<IfModule env_module>
+SetEnv NODE_ENV production
+SetEnv NEXT_TELEMETRY_DISABLED 1
+SetEnv UV_THREADPOOL_SIZE 2
+SetEnv NODE_OPTIONS "--max-old-space-size=256 --v8-pool-size=2"
+</IfModule>

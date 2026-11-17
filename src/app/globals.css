@@ -1,0 +1,282 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    font-family: var(--font-jakarta), system-ui, -apple-system, sans-serif;
+  }
+}
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  --surface-elevated: #ffffff;
+
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --card-border: #e2e8f0;
+
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --input-border: #cbd5e1;
+  --input-foreground: #0f172a;
+  --ring: #7c3aed;
+
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --primary-hover: #6d28d9;
+
+  --secondary: #e0e7ff;
+  --secondary-foreground: #3730a3;
+
+  --accent: #f5f3ff;
+  --accent-foreground: #7c3aed;
+
+  --success: #10b981;
+  --success-surface: #ecfdf5;
+  --success-foreground: #047857;
+  --success-border: #a7f3d0;
+
+  --warning: #f59e0b;
+  --warning-surface: #fffbeb;
+  --warning-foreground: #b45309;
+  --warning-border: #fde68a;
+
+  --danger: #ef4444;
+  --danger-surface: #fef2f2;
+  --danger-foreground: #b91c1c;
+  --danger-border: #fecaca;
+
+  --info: #0ea5e9;
+  --info-surface: #f0f9ff;
+  --info-foreground: #0369a1;
+  --info-border: #bae6fd;
+
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --popover-border: #e2e8f0;
+
+  --sidebar: #ffffff;
+  --sidebar-foreground: #334155;
+  --sidebar-border: #e2e8f0;
+  --sidebar-active: #f5f3ff;
+  --sidebar-active-foreground: #7c3aed;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: #f8fafc;
+}
+
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+
+  --surface: #0f172a;
+  --surface-secondary: #1e293b;
+  --surface-elevated: #1e293b;
+
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --card-border: #1e293b;
+
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+
+  --border: #1e293b;
+  --input: #0b0f19;
+  --input-border: #334155;
+  --input-foreground: #f8fafc;
+  --ring: #a78bfa;
+
+  --primary: #7c3aed;
+  --primary-foreground: #ffffff;
+  --primary-hover: #8b5cf6;
+
+  --secondary: #1e1b4b;
+  --secondary-foreground: #c7d2fe;
+
+  --accent: #2e1065;
+  --accent-foreground: #d8b4fe;
+
+  --success: #10b981;
+  --success-surface: rgba(16, 185, 129, 0.15);
+  --success-foreground: #34d399;
+  --success-border: rgba(16, 185, 129, 0.3);
+
+  --warning: #f59e0b;
+  --warning-surface: rgba(245, 158, 11, 0.15);
+  --warning-foreground: #fbbf24;
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --danger: #ef4444;
+  --danger-surface: rgba(239, 68, 68, 0.15);
+  --danger-foreground: #f87171;
+  --danger-border: rgba(239, 68, 68, 0.3);
+
+  --info: #0ea5e9;
+  --info-surface: rgba(14, 165, 233, 0.15);
+  --info-foreground: #38bdf8;
+  --info-border: rgba(14, 165, 233, 0.3);
+
+  --popover: #0f172a;
+  --popover-foreground: #f8fafc;
+  --popover-border: #1e293b;
+
+  --sidebar: #020617;
+  --sidebar-foreground: #cbd5e1;
+  --sidebar-border: #1e293b;
+  --sidebar-active: #7c3aed;
+  --sidebar-active-foreground: #ffffff;
+  --sidebar-muted: #64748b;
+  --sidebar-hover: #0f172a;
+}
+
+/* Reusable Semantic Utility Classes */
+.theme-card {
+  background-color: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+}
+
+.theme-card-subtle {
+  background-color: var(--surface-secondary);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+.theme-input {
+  background-color: var(--input);
+  color: var(--input-foreground);
+  border: 1px solid var(--input-border);
+}
+
+.theme-input:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+}
+
+.theme-table-header {
+  background-color: var(--surface-secondary);
+  color: var(--muted-foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.theme-table-row {
+  color: var(--foreground);
+  border-bottom: 1px solid var(--border);
+}
+
+.theme-table-row:hover {
+  background-color: var(--surface-secondary);
+}
+
+.theme-modal {
+  background-color: var(--surface);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.theme-dropdown {
+  background-color: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--popover-border);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.theme-code {
+  background-color: var(--surface-secondary);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Custom modern subtle scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Thin sleek custom scrollbar */
+.thin-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #f1f5f9;
+}
+.dark .thin-scrollbar {
+  scrollbar-color: #334155 #0f172a;
+}
+.thin-scrollbar::-webkit-scrollbar {
+  height: 5px !important;
+  width: 5px !important;
+}
+.thin-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9999px;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+.dark .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Print & PDF Safety: Clean white paper, crisp black text, no dark backgrounds */
+@media print {
+  body, html {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  aside, header, nav, .no-print {
+    display: none !important;
+  }
+  .theme-card, .theme-modal, .theme-card-subtle, div, table, tr, td, th {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}

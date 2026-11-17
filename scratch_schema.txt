@@ -1,0 +1,485 @@
+// ==========================================
+// 12. HRM - RECRUITMENT & JOB OPENINGS
+// ==========================================
+model JobOpening {
+  id              String       @id @default(uuid())
+  jobId           String       @unique
+  title           String
+  departmentId    String?
+  department      Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId   String?
+  designation     Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  vacancies       Int          @default(1)
+  employmentType  String       @default("FULL_TIME") // FULL_TIME, PART_TIME, INTERNSHIP, CONTRACT, FREELANCE
+  workMode        String       @default("OFFICE") // OFFICE, REMOTE, HYBRID
+  location        String?
+  minExperience   Float?
+  maxExperience   Float?
+  requiredSkills  String?      @db.Text
+  preferredSkills String?      @db.Text
+  minQualification String?
+  salaryMin       Float?
+  salaryMax       Float?
+  currency        String       @default("INR")
+  hiringManagerId String?
+  hiringManager   Employee?    @relation("HiringManager", fields: [hiringManagerId], references: [id], onDelete: SetNull)
+  recruiterId     String?
+  recruiter       Employee?    @relation("JobRecruiter", fields: [recruiterId], references: [id], onDelete: SetNull)
+  description     String       @db.LongText
+  responsibilities String?     @db.LongText
+  requirements    String?      @db.LongText
+  benefits        String?      @db.Text
+  openingDate     DateTime     @default(now())
+  closingDate     DateTime?
+  priority        String       @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  internalNotes   String?      @db.Text
+  status          String       @default("OPEN") // DRAFT, OPEN, ON_HOLD, CLOSED, CANCELLED
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  candidates      Candidate[]
+  interviews      Interview[]
+  offers          JobOffer[]
+}
+
+model Candidate {
+  id                 String       @id @default(uuid())
+  candidateId        String       @unique
+  fullName           String
+  email              String
+  phone              String?
+  whatsappNumber     String?
+  dateOfBirth        DateTime?
+  gender             String?
+  city               String?
+  state              String?
+  address            String?      @db.Text
+  currentCompany     String?
+  currentDesignation String?
+  currentSalary      Float?
+  expectedSalary     Float?
+  totalExperience    Float?
+  relevantExperience Float?
+  noticePeriod       Int?         // in days
+  lastWorkingDate    DateTime?
+  skills             String?      @db.Text
+  qualification      String?
+  resumeUrl          String?      @db.Text
+  portfolioUrl       String?      @db.Text
+  linkedinUrl        String?      @db.Text
+  githubUrl          String?      @db.Text
+  source             String       @default("Website")
+  referredById       String?
+  referredBy         Employee?    @relation("CandidateReferrals", fields: [referredById], references: [id], onDelete: SetNull)
+  appliedPositionId  String?
+  appliedPosition    JobOpening?  @relation(fields: [appliedPositionId], references: [id], onDelete: SetNull)
+  recruiterId        String?
+  recruiter          Employee?    @relation("CandidateRecruiter", fields: [recruiterId], references: [id], onDelete: SetNull)
+  tags               String?      @db.Text
+  notes              String?      @db.Text
+  rating             Int          @default(0)
+  status             String       @default("APPLIED") // APPLIED, SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWING, HR_ROUND, SELECTED, OFFER_SENT, OFFER_ACCEPTED, JOINED, ON_HOLD, REJECTED, WITHDREW, NO_SHOW, OFFER_REJECTED, DID_NOT_JOIN
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  interviews         Interview[]
+  offers             JobOffer[]
+}
+
+model Interview {
+  id              String       @id @default(uuid())
+  interviewId     String       @unique
+  candidateId     String
+  candidate       Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpeningId    String?
+  jobOpening      JobOpening?  @relation(fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  roundNumber     Int          @default(1)
+  roundName       String
+  type            String       @default("TECHNICAL") // HR_SCREENING, TECHNICAL, MACHINE_TEST, CODING, MANAGER, DIRECTOR, CLIENT, FINAL_HR, CUSTOM
+  date            DateTime
+  startTime       String
+  expectedDuration Int         @default(60) // minutes
+  mode            String       @default("GOOGLE_MEET") // IN_PERSON, PHONE, GOOGLE_MEET, ZOOM, TEAMS, OTHER
+  location        String?      @db.Text
+  meetingLink     String?      @db.Text
+  coordinatorId   String?
+  coordinator     Employee?    @relation("InterviewCoordinator", fields: [coordinatorId], references: [id], onDelete: SetNull)
+  reminder        Boolean      @default(true)
+  instructions    String?      @db.Text
+  notes           String?      @db.Text
+  status          String       @default("SCHEDULED") // SCHEDULED, IN_PROGRESS, COMPLETED, RESCHEDULED, CANCELLED, NO_SHOW
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  interviewers    InterviewInterviewer[]
+  feedbacks       InterviewFeedback[]
+}
+
+model InterviewInterviewer {
+  id             String     @id @default(uuid())
+  interviewId    String
+  interview      Interview  @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  employeeId     String
+  employee       Employee   @relation("Interviewer", fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([interviewId, employeeId])
+}
+
+model InterviewFeedback {
+  id                   String     @id @default(uuid())
+  interviewId          String
+  interview            Interview  @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewerId        String
+  interviewer          Employee   @relation("SubmittedFeedbacks", fields: [interviewerId], references: [id], onDelete: Cascade)
+  
+  communication        Int        @default(0) // 1-5
+  technicalKnowledge   Int        @default(0)
+  problemSolving       Int        @default(0)
+  relevantExperience   Int        @default(0)
+  confidence           Int        @default(0)
+  roleUnderstanding    Int        @default(0)
+  cultureFit           Int        @default(0)
+  leadership           Int        @default(0)
+  teamwork             Int        @default(0)
+  overallSuitability   Int        @default(0)
+  
+  strengths            String?    @db.Text
+  weaknesses           String?    @db.Text
+  technicalNotes       String?    @db.Text
+  behaviorNotes        String?    @db.Text
+  concerns             String?    @db.Text
+  salaryRecommendation Float?
+  recommendation       String     @default("HOLD") // STRONG_HIRE, HIRE, HOLD, REJECT
+  
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@unique([interviewId, interviewerId])
+}
+
+model JobOffer {
+  id               String       @id @default(uuid())
+  candidateId      String
+  candidate        Candidate    @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpeningId     String?
+  jobOpening       JobOpening?  @relation(fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  designationId    String?
+  designation      Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  departmentId     String?
+  department       Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  managerId        String?
+  manager          Employee?    @relation("OfferManager", fields: [managerId], references: [id], onDelete: SetNull)
+  
+  proposedJoiningDate DateTime
+  salary           Float
+  ctc              Float?
+  probationMonths  Int          @default(3)
+  employmentType   String       @default("FULL_TIME")
+  workLocation     String       @default("OFFICE")
+  validUntil       DateTime
+  specialTerms     String?      @db.Text
+  hrNotes          String?      @db.Text
+  status           String       @default("DRAFT") // DRAFT, APPROVAL_PENDING, APPROVED, SENT, VIEWED, ACCEPTED, REJECTED, EXPIRED, WITHDRAWN
+  
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+// ==========================================
+// 13. HRM - PERFORMANCE & KPIs
+// ==========================================
+model PerformanceKpiTemplate {
+  id               String       @id @default(uuid())
+  name             String
+  departmentId     String?
+  department       Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  designationId    String?
+  designation      Designation? @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  category         String       @default("GENERAL") // SALES, DEV, DESIGN, HR, GENERAL
+  weightPercent    Float        @default(10)
+  target           Float        @default(100)
+  measurementType  String       @default("COUNT") // COUNT, PERCENTAGE, REVENUE, RATING, TIME
+  minScore         Float        @default(0)
+  maxScore         Float        @default(100)
+  isAutomatic      Boolean      @default(false)
+  dataSource       String?      // e.g. "crm.deals.won", "hr.attendance.late"
+  isActive         Boolean      @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model EmployeeDailyPerformance {
+  id               String       @id @default(uuid())
+  employeeId       String
+  employee         Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date             DateTime
+  
+  // Snapshots
+  checkIn          DateTime?
+  checkOut         DateTime?
+  workMinutes      Int          @default(0)
+  isLate           Boolean      @default(false)
+  
+  tasksAssigned    Int          @default(0)
+  tasksCompleted   Int          @default(0)
+  tasksPending     Int          @default(0)
+  tasksOverdue     Int          @default(0)
+  
+  leadsAssigned    Int          @default(0)
+  leadsContacted   Int          @default(0)
+  followUps        Int          @default(0)
+  meetings         Int          @default(0)
+  dealsWon         Int          @default(0)
+  revenue          Float        @default(0)
+  
+  targetAchieved   Float        @default(0)
+  complaints       Int          @default(0)
+  warnings         Int          @default(0)
+  clientFeedback   Float        @default(0)
+  managerRating    Float        @default(0)
+  
+  finalScore       Float        @default(0)
+  growthPercent    Float        @default(0)
+  status           String       @default("STABLE") // EXCELLENT, IMPROVING, STABLE, DECLINING, CRITICAL
+  
+  createdAt        DateTime     @default(now())
+
+  @@unique([employeeId, date])
+  @@index([date])
+}
+
+model EmployeePerformanceScore {
+  id               String       @id @default(uuid())
+  employeeId       String
+  employee         Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  periodType       String       // WEEK, MONTH, QUARTER, YEAR
+  startDate        DateTime
+  endDate          DateTime
+  score            Float        @default(0)
+  growthPercent    Float        @default(0)
+  status           String       @default("STABLE")
+  createdAt        DateTime     @default(now())
+
+  @@index([employeeId, periodType, startDate])
+}
+
+model ManagerReview {
+  id                 String       @id @default(uuid())
+  employeeId         String
+  employee           Employee     @relation("EmployeeReviewed", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewerId         String
+  reviewer           Employee     @relation("Reviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  date               DateTime
+  rating             String       @default("AVERAGE") // EXCELLENT, GOOD, AVERAGE, NEEDS_IMPROVEMENT, POOR
+  wentWell           String?      @db.Text
+  improveRequired    String?      @db.Text
+  comments           String?      @db.Text
+  employeeNote       String?      @db.Text
+  privateNote        String?      @db.Text
+  coachingRequired   Boolean      @default(false)
+  warningRecommended Boolean      @default(false)
+  appreciationRec    Boolean      @default(false)
+  pipRecommended     Boolean      @default(false)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model PerformanceThreshold {
+  id         String   @id @default(uuid())
+  label      String   // EXCELLENT, IMPROVING, STABLE, DECLINING, CRITICAL
+  minPercent Float
+  maxPercent Float
+  color      String   @default("#000000")
+  createdAt  DateTime @default(now())
+}
+
+// ==========================================
+// 14. HRM - APPRECIATION, REWARDS & PROMOTIONS
+// ==========================================
+model EmployeeAppreciation {
+  id                String       @id @default(uuid())
+  employeeId        String
+  employee          Employee     @relation("EmployeeAppreciated", fields: [employeeId], references: [id], onDelete: Cascade)
+  type              String       // GOOD_WORK, EXCELLENT_PERFORMANCE, STAR_PERFORMER, MONTH_EMPLOYEE, CLIENT, TARGET, PERFECT_ATTENDANCE, TEAM_PLAYER, INNOVATION, LEADERSHIP, CUSTOM
+  title             String
+  description       String       @db.Text
+  reason            String       @db.Text
+  performancePeriod String?
+  taskId            String?
+  projectId         String?
+  dealId            String?
+  clientId          String?
+  givenById         String
+  givenBy           Employee     @relation("AppreciationGiver", fields: [givenById], references: [id], onDelete: Cascade)
+  date              DateTime     @default(now())
+  certificateUrl    String?      @db.Text
+  rewardAttached    Boolean      @default(false)
+  visibility        String       @default("COMPANY") // EMPLOYEE_ONLY, DEPARTMENT, COMPANY, HR_ONLY
+  notes             String?      @db.Text
+  createdAt         DateTime     @default(now())
+  
+  rewards           EmployeeReward[]
+}
+
+model EmployeeReward {
+  id                String       @id @default(uuid())
+  employeeId        String
+  employee          Employee     @relation("EmployeeRewarded", fields: [employeeId], references: [id], onDelete: Cascade)
+  type              String       // CASH_BONUS, INCENTIVE, GIFT, VOUCHER, PAID_LEAVE, CERTIFICATE, TROPHY, SALARY_INCREMENT, OTHER
+  title             String
+  value             Float        @default(0)
+  currency          String       @default("INR")
+  reason            String       @db.Text
+  performancePeriod String?
+  appreciationId    String?
+  appreciation      EmployeeAppreciation? @relation(fields: [appreciationId], references: [id], onDelete: SetNull)
+  recommendedById   String?
+  recommendedBy     Employee?    @relation("RewardRecommender", fields: [recommendedById], references: [id], onDelete: SetNull)
+  approvedById      String?
+  approvedBy        Employee?    @relation("RewardApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  approvalDate      DateTime?
+  rewardDate        DateTime?
+  paymentStatus     String       @default("PENDING") // PENDING, PROCESSING, PAID, CANCELLED
+  payrollLinked     Boolean      @default(false)
+  notes             String?      @db.Text
+  status            String       @default("RECOMMENDED") // RECOMMENDED, MANAGER_APPROVED, HR_REVIEW, MGMT_APPROVED, APPROVED, REJECTED, PROCESSED, DELIVERED
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model EmployeePromotion {
+  id                String       @id @default(uuid())
+  employeeId        String
+  employee          Employee     @relation("EmployeePromoted", fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  oldDepartmentId   String?
+  oldDepartment     Department?  @relation("OldDeptPromo", fields: [oldDepartmentId], references: [id], onDelete: SetNull)
+  oldDesignationId  String?
+  oldDesignation    Designation? @relation("OldDesigPromo", fields: [oldDesignationId], references: [id], onDelete: SetNull)
+  oldManagerId      String?
+  oldManager        Employee?    @relation("OldManagerPromo", fields: [oldManagerId], references: [id], onDelete: SetNull)
+  oldSalary         Float        @default(0)
+
+  newDepartmentId   String?
+  newDepartment     Department?  @relation("NewDeptPromo", fields: [newDepartmentId], references: [id], onDelete: SetNull)
+  newDesignationId  String?
+  newDesignation    Designation? @relation("NewDesigPromo", fields: [newDesignationId], references: [id], onDelete: SetNull)
+  newManagerId      String?
+  newManager        Employee?    @relation("NewManagerPromo", fields: [newManagerId], references: [id], onDelete: SetNull)
+  newSalary         Float        @default(0)
+  
+  incrementAmount   Float        @default(0)
+  incrementPercent  Float        @default(0)
+  effectiveDate     DateTime
+  reason            String       @db.Text
+  performancePeriod String?
+  performanceScore  Float?
+  
+  recommendedById   String?
+  recommendedBy     Employee?    @relation("PromoRecommender", fields: [recommendedById], references: [id], onDelete: SetNull)
+  managerComments   String?      @db.Text
+  hrComments        String?      @db.Text
+  mgmtComments      String?      @db.Text
+  
+  status            String       @default("RECOMMENDED") // RECOMMENDED, MANAGER_APPROVED, HR_REVIEW, MGMT_APPROVED, APPROVED, REJECTED, EXECUTED
+  letterUrl         String?      @db.Text
+  
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+// ==========================================
+// 15. HRM - WARNINGS & PIP
+// ==========================================
+model EmployeeWarning {
+  id               String       @id @default(uuid())
+  employeeId       String
+  employee         Employee     @relation("EmployeeWarned", fields: [employeeId], references: [id], onDelete: Cascade)
+  category         String       // PERFORMANCE, ATTENDANCE, BEHAVIOUR, MISSED_TARGET, TASK_DELAY, CLIENT_COMPLAINT, POLICY, OTHER
+  severity         String       @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  reason           String       @db.Text
+  details          String       @db.LongText
+  evidenceUrl      String?      @db.Text
+  issuedById       String
+  issuedBy         Employee     @relation("WarningIssuer", fields: [issuedById], references: [id], onDelete: Cascade)
+  issueDate        DateTime     @default(now())
+  employeeResponse String?      @db.Text
+  followUpDate     DateTime?
+  resolution       String?      @db.Text
+  status           String       @default("DRAFT") // DRAFT, ISSUED, ACKNOWLEDGED, UNDER_REVIEW, RESOLVED, ESCALATED
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+model EmployeePip {
+  id                 String       @id @default(uuid())
+  employeeId         String
+  employee           Employee     @relation("EmployeePip", fields: [employeeId], references: [id], onDelete: Cascade)
+  reason             String       @db.Text
+  problemDescription String       @db.LongText
+  currentPerformance String       @db.Text
+  expectedPerformance String      @db.Text
+  kpiTargets         String       @db.Text
+  startDate          DateTime
+  endDate            DateTime
+  reviewFrequency    String       @default("WEEKLY") // WEEKLY, BIWEEKLY, MONTHLY
+  managerId          String
+  manager            Employee     @relation("PipManager", fields: [managerId], references: [id], onDelete: Cascade)
+  hrOwnerId          String
+  hrOwner            Employee     @relation("PipHrOwner", fields: [hrOwnerId], references: [id], onDelete: Cascade)
+  improvementActions String       @db.Text
+  trainingRequired   String?      @db.Text
+  managerNotes       String?      @db.Text
+  employeeComments   String?      @db.Text
+  progress           Int          @default(0) // 0 to 100
+  finalResult        String?      @db.Text
+  status             String       @default("DRAFT") // DRAFT, ACTIVE, IMPROVING, EXTENDED, COMPLETED, FAILED, CANCELLED
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  reviews            PipReview[]
+}
+
+model PipReview {
+  id               String       @id @default(uuid())
+  pipId            String
+  pip              EmployeePip  @relation(fields: [pipId], references: [id], onDelete: Cascade)
+  date             DateTime     @default(now())
+  kpiProgress      String       @db.Text
+  managerRating    String       @default("AVERAGE") // IMPROVING, NO_CHANGE, DECLINING, SATISFACTORY, UNSATISFACTORY
+  employeeComments String?      @db.Text
+  evidence         String?      @db.Text
+  nextActions      String?      @db.Text
+  createdAt        DateTime     @default(now())
+}
+
+// ==========================================
+// 16. HRM - CAREER TIMELINE & RULES
+// ==========================================
+model EmployeeCareerEvent {
+  id          String   @id @default(uuid())
+  employeeId  String
+  employee    Employee @relation("CareerEvents", fields: [employeeId], references: [id], onDelete: Cascade)
+  type        String   // JOINING, DEPT_CHANGE, DESIG_CHANGE, SALARY_REVISION, PROMOTION, APPRECIATION, BONUS, GIFT, AWARD, WARNING, PIP, PERFORMANCE_REVIEW, TRANSFER, MANAGER_CHANGE, ACHIEVEMENT
+  title       String
+  description String?  @db.Text
+  date        DateTime @default(now())
+  metadata    String?  @db.Text // JSON string for extra fields
+  createdAt   DateTime @default(now())
+}
+
+model RecognitionRule {
+  id             String       @id @default(uuid())
+  name           String
+  condition      String       // JSON logic or string representation
+  threshold      String       // Threshold value
+  action         String       // RECOMMEND_APPRECIATION, RECOMMEND_PROMOTION, RECOMMEND_BONUS
+  departmentId   String?
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  designationId  String?
+  designation    Designation? @relation(fields: [designationId], references: [id], onDelete: Cascade)
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
