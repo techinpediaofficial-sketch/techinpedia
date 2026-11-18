@@ -306,9 +306,6 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
             </button>
           </div>
         </div>
-            </button>
-          </div>
-        </div>
 
         {/* MEGA DROPDOWN MENU - Perfectly centered within max-w-7xl container, never cut off */}
         {servicesDropdownOpen && (
