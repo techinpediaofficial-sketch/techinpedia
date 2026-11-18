@@ -330,3 +330,13 @@
 [2026-11-17 18:45:10 IST] [WARN] [OFFPAGE_VERIFIER] Verification crawl error on https://medium.com/@ahimanshu045/the-opex-advantage-how-delhi-ncr-companies-cut-it-hardware-costs-by-40-with-laptop-leasing-46b01e76aca5: The remote server returned an error: (403) Forbidden.
 [2026-11-17 18:45:11 IST] [SUCCESS] [GSC_CLIENT] Successfully generated Google OAuth2 Bearer token.
 [2026-11-17 18:45:14 IST] [SUCCESS] [TELEGRAM] Telegram notification successfully sent (Message ID: 10).
+[2026-11-17 19:00:00 IST] [INFO] [ORCHESTRATOR] ======================================================================
+[2026-11-17 19:00:00 IST] [INFO] [ORCHESTRATOR] TECHINPEDIA AUTONOMOUS SEO & MARKETING WORKFLOW RUNNING [Mode: Full]
+[2026-11-17 19:00:00 IST] [INFO] [ORCHESTRATOR] ======================================================================
+[2026-11-17 19:00:00 IST] [INFO] [ORCHESTRATOR] Executing Agent 1: Technical SEO Audit...
+[2026-11-17 19:00:01 IST] [INFO] [TECH_SEO] Starting Technical SEO Audit on https://techinpedia.com...
+[2026-11-17 19:00:01 IST] [SUCCESS] [TECH_SEO] robots.txt verified: Valid status 200 with sitemap directive.
+[2026-11-17 19:00:01 IST] [SUCCESS] [TECH_SEO] sitemap.xml verified: 200 OK with 226 indexable URLs.
+[2026-11-17 19:00:10 IST] [INFO] [PAGESPEED] Requesting PageSpeed Insights (mobile) for https://techinpedia.com...
+[2026-11-17 19:00:11 IST] [WARN] [PAGESPEED] PageSpeed API notice (mobile): The remote server returned an error: (429) Too Many Requests.
+[2026-11-17 19:00:11 IST] [INFO] [TECH_SEO] Found 3 duplicate title issues. Preparing safe branch and fix...
