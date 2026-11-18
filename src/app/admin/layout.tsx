@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getAuthSession } from '@/lib/auth';
 import AdminShell from '@/components/admin/AdminShell';
 import SessionTracker from '@/components/admin/SessionTracker';
