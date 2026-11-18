@@ -81,7 +81,7 @@ export default function LaptopOnRentHubPage() {
       '@type': 'LocalBusiness',
       name: 'TechInPedia',
       url: siteUrl,
-      telephone: '+919211729690',
+      telephone: '+919818768680',
       address: {
         '@type': 'PostalAddress',
         streetAddress: 'Sector 2',
@@ -134,10 +134,10 @@ export default function LaptopOnRentHubPage() {
             </p>
             <div className="flex flex-wrap justify-center items-center gap-4 pt-4">
               <a
-                href="tel:+919211729690"
+                href="tel:+919818768680"
                 className="px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md shadow-emerald-500/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                📞 Call Now: +91 92117 29690
+                📞 Call Now: +91 98187 68680
               </a>
               <RequestQuoteModal serviceName="Laptop on Rent Fleet" />
               <Link

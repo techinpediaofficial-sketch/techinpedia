@@ -230,10 +230,10 @@ export default function HardwareRentalLanding({ service, whatsappLink }: { servi
                   <span className="text-xs font-bold text-white uppercase tracking-wider">{service.badge || 'Popular Rental'}</span>
                 </div>
                 <a
-                  href="tel:+919211729690"
+                  href="tel:+919818768680"
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 hover:text-white hover:bg-emerald-500/20 text-xs font-bold backdrop-blur-md transition-all shadow-sm"
                 >
-                  <span>📞 Call: +91 92117 29690</span>
+                  <span>📞 Call: +91 98187 68680</span>
                 </a>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
@@ -245,10 +245,10 @@ export default function HardwareRentalLanding({ service, whatsappLink }: { servi
               
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
                 <a
-                  href="tel:+919211729690"
+                  href="tel:+919818768680"
                   className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 flex items-center justify-center gap-2"
                 >
-                  <span>📞 Call: +91 92117 29690</span>
+                  <span>📞 Call: +91 98187 68680</span>
                 </a>
                 <RequestQuoteModal serviceName={service.title} />
                 <a

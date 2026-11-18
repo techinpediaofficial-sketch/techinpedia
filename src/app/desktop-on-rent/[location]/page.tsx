@@ -38,8 +38,8 @@ export default async function DesktopLocationPage({ params }: { params: Promise<
               <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
               <span>Doorstep Delivery & Setup in {loc.city}</span>
               <span className="text-slate-300">•</span>
-              <a href="tel:+919211729690" className="text-blue-700 hover:text-blue-950 underline flex items-center gap-1">
-                <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> +91 92117 29690
+              <a href="tel:+919818768680" className="text-blue-700 hover:text-blue-950 underline flex items-center gap-1">
+                <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> +91 98187 68680
               </a>
             </div>
 
@@ -51,10 +51,10 @@ export default async function DesktopLocationPage({ params }: { params: Promise<
             </p>
             <div className="flex flex-wrap justify-center items-center gap-4 pt-6">
               <a
-                href="tel:+919211729690"
+                href="tel:+919818768680"
                 className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
               >
-                <Phone className="w-4 h-4" /> Call: +91 92117 29690
+                <Phone className="w-4 h-4" /> Call: +91 98187 68680
               </a>
               <RequestQuoteModal serviceName={`Desktop Rental in ${loc.city}`} />
               <Link 

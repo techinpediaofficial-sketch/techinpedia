@@ -199,14 +199,14 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
         <span className="hidden md:inline text-blue-200">Express Doorstep Delivery in Noida, Gurgaon & Delhi</span>
         <span className="text-white/40 hidden sm:inline">•</span>
         <a
-          href="tel:+919211729690"
+          href="tel:+919818768680"
           className="inline-flex items-center gap-1 font-bold text-amber-300 hover:text-white transition-colors underline decoration-amber-400 decoration-1 underline-offset-2"
         >
-          📞 Call: +91 92117 29690
+          📞 Call: +91 98187 68680
         </a>
         <span className="text-white/40 hidden sm:inline">•</span>
         <a
-          href={whatsappLink || "https://wa.me/919211729690?text=Hi%20TechInPedia%2C%20I%20am%20inquiring%20about%20laptop%20or%20computer%20rental."}
+          href={whatsappLink || "https://wa.me/919818768680?text=Hi%20TechInPedia%2C%20I%20am%20inquiring%20about%20laptop%20or%20computer%20rental."}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1 font-bold text-emerald-300 hover:text-white transition-colors"
@@ -272,12 +272,12 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
           {/* RIGHT ACTION CTA */}
           <div className="hidden lg:flex items-center gap-2.5">
             <a
-              href="tel:+919211729690"
+              href="tel:+919818768680"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all shadow-sm"
               title="Direct Rental Hotline"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span>📞 +91 92117 29690</span>
+              <span>📞 +91 98187 68680</span>
             </a>
             <Link
               href="/start-project"
@@ -291,7 +291,7 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
           {/* MOBILE CALL BUTTON + MENU TOGGLE */}
           <div className="lg:hidden flex items-center gap-2">
             <a
-              href="tel:+919211729690"
+              href="tel:+919818768680"
               className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm"
               title="Call TechInPedia"
             >

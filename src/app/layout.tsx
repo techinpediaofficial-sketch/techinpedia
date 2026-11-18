@@ -306,7 +306,7 @@ export default async function RootLayout({
         priceRange: '₹1,499 - ₹8,500/month',
         currenciesAccepted: 'INR',
         paymentAccepted: 'Cash, Credit Card, Bank Transfer, UPI, GST Invoice',
-        telephone: settingsMap.company_phone || '+91-9876543210',
+        telephone: settingsMap.company_phone || '+91 98187 68680',
         email: settingsMap.company_email || siteConfig.email,
         address: {
           '@type': 'PostalAddress',
