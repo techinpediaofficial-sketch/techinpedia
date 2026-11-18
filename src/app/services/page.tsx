@@ -24,7 +24,7 @@ import { SERVICES_CATALOG } from '@/lib/servicesCatalog';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'All Services & Solutions | TechInPedia',
+  title: { absolute: 'All Services & Solutions | TechInPedia' },
   description: 'Explore enterprise hardware rentals (laptops, desktops, workstations), IT AMC maintenance, custom software development, cloud infrastructure, and strategic digital marketing.',
   alternates: {
     canonical: 'https://techinpedia.com/services',

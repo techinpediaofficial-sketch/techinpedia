@@ -9,7 +9,7 @@ import { ContentStatus } from '@prisma/client';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Blog & Software Engineering Insights | TechInPedia',
+  title: { absolute: 'Blog & Software Engineering Insights | TechInPedia' },
   description: 'Articles and guides on Next.js, React, Node.js, SaaS architecture, UI/UX design, and software engineering best practices by TechInPedia.',
   alternates: {
     canonical: 'https://techinpedia.com/blog',

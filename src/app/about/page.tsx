@@ -8,7 +8,7 @@ import { ArrowRight, CheckCircle2, ShieldCheck, Zap, Laptop, Code2, TrendingUp, 
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'About TechInPedia | Hardware Rentals, Software Engineering & Marketing',
+  title: { absolute: 'About TechInPedia | Hardware Rentals, Software Engineering & Marketing' },
   description: 'Learn about TechInPedia — your integrated partner for enterprise laptop/computer rentals, IT AMC maintenance, custom software development, and growth marketing.',
   alternates: {
     canonical: 'https://techinpedia.com/about',
