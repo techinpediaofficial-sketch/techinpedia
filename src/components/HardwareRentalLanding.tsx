@@ -224,9 +224,17 @@ export default function HardwareRentalLanding({ service, whatsappLink }: { servi
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
-                <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="text-xs font-bold text-white uppercase tracking-wider">{service.badge || 'Popular Rental'}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">{service.badge || 'Popular Rental'}</span>
+                </div>
+                <a
+                  href="tel:+919211729690"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-400/30 text-emerald-300 hover:text-white hover:bg-emerald-500/20 text-xs font-bold backdrop-blur-md transition-all shadow-sm"
+                >
+                  <span>📞 Call: +91 92117 29690</span>
+                </a>
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight leading-[1.1]">
                 {service.title}
@@ -236,15 +244,21 @@ export default function HardwareRentalLanding({ service, whatsappLink }: { servi
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <a
+                  href="tel:+919211729690"
+                  className="px-7 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold text-sm shadow-xl shadow-emerald-500/25 transition-all hover:scale-105 flex items-center justify-center gap-2"
+                >
+                  <span>📞 Call: +91 92117 29690</span>
+                </a>
                 <RequestQuoteModal serviceName={service.title} />
                 <a
                   href={whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-7 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-bold text-sm shadow-xl shadow-emerald-500/20 transition-all hover:scale-105 flex items-center justify-center gap-2"
+                  className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-sm border border-white/20 transition-all flex items-center justify-center gap-2"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Chat on WhatsApp</span>
+                  <MessageSquare className="w-4 h-4 text-emerald-400" />
+                  <span>WhatsApp</span>
                 </a>
               </div>
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import RequestQuoteModal from '@/components/RequestQuoteModal';
-import { CheckCircle2, Monitor, HardDrive, HelpCircle, Building2, Zap, Server } from 'lucide-react';
+import { CheckCircle2, Monitor, HardDrive, HelpCircle, Building2, Zap, Server, PhoneCall, Phone } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -34,13 +34,28 @@ export default async function DesktopLocationPage({ params }: { params: Promise<
         <div className="absolute top-0 left-0 -translate-y-1/4 -translate-x-1/4 w-[800px] h-[800px] bg-blue-100/40 rounded-full blur-3xl -z-10"></div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto space-y-6">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-50 border border-blue-300 text-blue-900 text-xs sm:text-sm font-bold shadow-sm">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+              <span>Doorstep Delivery & Setup in {loc.city}</span>
+              <span className="text-slate-300">•</span>
+              <a href="tel:+919211729690" className="text-blue-700 hover:text-blue-950 underline flex items-center gap-1">
+                <PhoneCall className="w-3.5 h-3.5 text-blue-600" /> +91 92117 29690
+              </a>
+            </div>
+
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
               Desktop on Rent in <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{loc.city}</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
               {loc.description}
             </p>
-            <div className="flex flex-wrap justify-center gap-4 pt-6">
+            <div className="flex flex-wrap justify-center items-center gap-4 pt-6">
+              <a
+                href="tel:+919211729690"
+                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md shadow-blue-500/25 flex items-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Phone className="w-4 h-4" /> Call: +91 92117 29690
+              </a>
               <RequestQuoteModal serviceName={`Desktop Rental in ${loc.city}`} />
               <Link 
                 href="/desktop-rental-price"

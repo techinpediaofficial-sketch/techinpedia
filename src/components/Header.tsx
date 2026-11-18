@@ -186,11 +186,36 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl border-b border-violet-100 shadow-sm py-1.5'
-          : 'bg-white/85 backdrop-blur-md border-b border-violet-100/70 py-2 sm:py-2.5'
+          ? 'bg-white/95 backdrop-blur-xl border-b border-violet-100 shadow-sm'
+          : 'bg-white/85 backdrop-blur-md border-b border-violet-100/70'
       }`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      {/* TOP ANNOUNCEMENT & DIRECT CALL STRIP */}
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-violet-800 text-white text-[11px] sm:text-xs py-1 px-4 text-center font-medium shadow-inner flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+        <span className="flex items-center gap-1.5 font-semibold text-blue-100">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+          <span>Laptop & Computer Rentals Delhi NCR:</span>
+        </span>
+        <span className="hidden md:inline text-blue-200">Express Doorstep Delivery in Noida, Gurgaon & Delhi</span>
+        <span className="text-white/40 hidden sm:inline">•</span>
+        <a
+          href="tel:+919211729690"
+          className="inline-flex items-center gap-1 font-bold text-amber-300 hover:text-white transition-colors underline decoration-amber-400 decoration-1 underline-offset-2"
+        >
+          📞 Call: +91 92117 29690
+        </a>
+        <span className="text-white/40 hidden sm:inline">•</span>
+        <a
+          href={whatsappLink || "https://wa.me/919211729690?text=Hi%20TechInPedia%2C%20I%20am%20inquiring%20about%20laptop%20or%20computer%20rental."}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 font-bold text-emerald-300 hover:text-white transition-colors"
+        >
+          💬 WhatsApp
+        </a>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 relative">
         <div className="flex items-center justify-between">
           
           {/* LOGO */}
@@ -245,24 +270,42 @@ export default function Header({ whatsappLink }: { whatsappLink?: string }) {
           </nav>
 
           {/* RIGHT ACTION CTA */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2.5">
+            <a
+              href="tel:+919211729690"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-all shadow-sm"
+              title="Direct Rental Hotline"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>📞 +91 92117 29690</span>
+            </a>
             <Link
               href="/start-project"
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-violet-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md shadow-violet-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Start a Project</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
 
-          {/* MOBILE MENU TOGGLE BUTTON */}
+          {/* MOBILE CALL BUTTON + MENU TOGGLE */}
           <div className="lg:hidden flex items-center gap-2">
+            <a
+              href="tel:+919211729690"
+              className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1 shadow-sm"
+              title="Call TechInPedia"
+            >
+              <span>📞 Call</span>
+            </a>
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-xl bg-violet-50 border border-violet-200 text-slate-700 hover:text-violet-600 cursor-pointer"
               aria-label="Toggle Navigation Menu"
             >
               {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+        </div>
             </button>
           </div>
         </div>

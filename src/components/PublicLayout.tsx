@@ -53,7 +53,7 @@ export default function PublicLayout({
     <>
       <ScrollProgressBar />
       {!isMarketplace && <Header whatsappLink={waLink} />}
-      <main className={isMarketplace ? 'flex-grow' : 'flex-grow pt-20'}>{children}</main>
+      <main className={isMarketplace ? 'flex-grow' : 'flex-grow pt-24 sm:pt-28'}>{children}</main>
       {!isMarketplace && <Footer settings={settingsMap} whatsappLink={waLink} seoPages={seoPages} />}
       {!isMarketplace && <BackToTopButton />}
       {!isMarketplace && <WhatsAppFloatingButton href={waLink} />}
