@@ -1,14 +1,51 @@
 {
-  "targetTerm": "laptop on rent near me",
-  "priorityRegions": ["Delhi", "Noida", "Gurgaon", "Faridabad", "Ghaziabad"],
+  "targetTerms": [
+    "laptop on rent near me",
+    "laptop rent near me",
+    "laptop hire on rent near me",
+    "computer on rent near me",
+    "corporate laptop rental Delhi NCR"
+  ],
+  "geoCoverage": {
+    "Noida": {
+      "focus": "All Sectors & Tech Parks",
+      "sectors": [
+        "Sector 1", "Sector 2", "Sector 3", "Sector 4", "Sector 10", "Sector 15", "Sector 16", "Sector 18",
+        "Sector 57", "Sector 58", "Sector 59", "Sector 60", "Sector 62", "Sector 63", "Sector 64", "Sector 65",
+        "Sector 80", "Sector 81", "Sector 83", "Sector 85", "Sector 90", "Sector 125", "Sector 126", "Sector 127",
+        "Sector 128", "Sector 132", "Sector 135", "Sector 136", "Sector 142", "Noida Expressway IT Hubs",
+        "Greater Noida Knowledge Park", "Ecotech", "Pari Chowk"
+      ]
+    },
+    "Gurgaon": {
+      "focus": "All Sectors, Cyber Hubs & Manesar",
+      "sectors": [
+        "DLF Cyber City", "Cyber Hub", "Udyog Vihar Phase 1 to 5", "DLF Phase 1 to 5",
+        "Golf Course Road", "Golf Course Extension Road", "Sohna Road",
+        "Sector 14", "Sector 18", "Sector 29", "Sector 32 Institutional Area",
+        "Sector 44 Institutional Area", "Sector 48", "Sector 54", "Sector 56", "Sector 57",
+        "Sector 69", "IMT Manesar Sector 1 to 8", "Manesar Industrial Area"
+      ]
+    },
+    "Delhi": {
+      "focus": "All Commercial & IT Corridors",
+      "areas": [
+        "Nehru Place", "Okhla Phase 1", "Okhla Phase 2", "Okhla Phase 3",
+        "Connaught Place", "Bhikaji Cama Place", "Barakhamba Road",
+        "Laxmi Nagar", "Preet Vihar", "Netaji Subhash Place (Pitampura)",
+        "Janakpuri District Centre", "Rajendra Place", "Saket District Centre",
+        "South Extension", "Vikas Puri", "Dwarka Sector 1 to 24"
+      ]
+    }
+  },
   "coreActions": [
     {
       "pillar": "Google Business Profile (Local Map Pack)",
-      "action": "Optimize primary GMB category as 'Computer Rental Agency' with verified addresses in Noida (Sector 2) and Delhi (Vikas Puri). Set service radius covering all NCR pincodes."
+      "action": "Optimize primary GMB category as 'Computer Rental Agency' with service radius encompassing all pincodes in Delhi, all sectors of Noida, all sectors of Gurgaon, and IMT Manesar."
     },
     {
       "pillar": "LocalBusiness Structured Data (JSON-LD)",
-      "action": "Deploy LocalBusiness schema on location routes with geo coordinates, opening hours, WhatsApp direct dial (+91 98187 68680), and specific areaServed arrays."
+      "action": "Deploy LocalBusiness schema on location routes with geo coordinates, opening hours, WhatsApp direct dial, and specific areaServed arrays targeting every mapped sector."
     },
     {
       "pillar": "Hyperlocal Page Optimization",
@@ -16,7 +53,7 @@
     },
     {
       "pillar": "High-Intent Keyword Tracking",
-      "action": "Track daily Search Console rankings for 'laptop on rent near me', 'computer rent near me', 'corporate laptop rental delhi'."
+      "action": "Track daily Search Console rankings for 'laptop on rent near me', 'laptop rent near me', 'laptop hire on rent near me'."
     }
   ],
   "monitoredUrls": [

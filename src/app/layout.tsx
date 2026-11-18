@@ -292,6 +292,88 @@ export default async function RootLayout({
           'query-input': 'required name=search_term_string',
         },
       },
+      {
+        '@type': ['LocalBusiness', 'ProfessionalService'],
+        '@id': `${siteUrl}/#localbusiness`,
+        name: 'TechInPedia - Laptop, Desktop & Computer Rental Delhi NCR',
+        alternateName: ['TechInPedia Laptop Rental', 'TechInPedia Computer Rentals', 'TechInPedia Rentals'],
+        url: `${siteUrl}/services/laptop-rental`,
+        logo: siteConfig.logo,
+        image: `${siteUrl}/logo.png`,
+        description: 'Leading provider of commercial laptop rentals, desktop computer hiring, Apple MacBook leasing, and IT hardware on rent near you across Noida, Gurgaon, Delhi, and Manesar.',
+        priceRange: '₹1,499 - ₹8,500/month',
+        currenciesAccepted: 'INR',
+        paymentAccepted: 'Cash, Credit Card, Bank Transfer, UPI, GST Invoice',
+        telephone: settingsMap.company_phone || '+91-9876543210',
+        email: settingsMap.company_email || siteConfig.email,
+        address: {
+          '@type': 'PostalAddress',
+          addressLocality: 'Delhi NCR',
+          addressRegion: 'Delhi',
+          addressCountry: 'IN',
+        },
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: 28.5355,
+          longitude: 77.3910,
+        },
+        openingHoursSpecification: [
+          {
+            '@type': 'OpeningHoursSpecification',
+            dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            opens: '09:00',
+            closes: '20:00',
+          },
+        ],
+        areaServed: [
+          'Noida', 'Sector 62 Noida', 'Sector 18 Noida', 'Sector 125 Noida', 'Sector 135 Noida', 'Noida Expressway', 'Greater Noida', 'Greater Noida West',
+          'Gurgaon', 'DLF Cyber City', 'CyberHub Gurgaon', 'Udyog Vihar', 'Golf Course Road', 'Sohna Road', 'Manesar', 'IMT Manesar',
+          'Delhi', 'Nehru Place', 'Okhla', 'Connaught Place', 'Saket', 'Dwarka', 'Janakpuri', 'Netaji Subhash Place', 'Rohini',
+          'Ghaziabad', 'Indirapuram', 'Faridabad', 'Delhi NCR'
+        ],
+        hasOfferCatalog: {
+          '@type': 'OfferCatalog',
+          name: 'IT Hardware & Laptop Rental Services',
+          itemListElement: [
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: 'Laptop on Rent Near Me',
+                description: 'Doorstep rental of Intel Core i5/i7 & AMD laptops with 24-hr delivery in Noida, Gurgaon, and Delhi.',
+                url: `${siteUrl}/services/laptop-rental`,
+              },
+            },
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: 'Corporate Bulk Laptop Rental',
+                description: 'Bulk enterprise laptop leasing for startups, MNCs, and BPO operations with buffer units and AMC.',
+                url: `${siteUrl}/corporate-laptop-rental`,
+              },
+            },
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: 'Computer & Desktop on Rent',
+                description: 'Desktop towers, Core i7/i9 workstations, multimonitor PCs for office and engineering teams.',
+                url: `${siteUrl}/services/computer-rental`,
+              },
+            },
+            {
+              '@type': 'Offer',
+              itemOffered: {
+                '@type': 'Service',
+                name: 'MacBook on Rent (M-Series Silicon)',
+                description: 'Apple MacBook Air and Pro rentals for iOS developers, creative agencies, and video editors.',
+                url: `${siteUrl}/services/macbook-rental`,
+              },
+            },
+          ],
+        },
+      },
     ]
   };
 
