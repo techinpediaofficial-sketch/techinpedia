@@ -7,6 +7,7 @@ const nextConfig = {
   },
   experimental: {
     cpus: 1,
+    workerThreads: true,
     webpackBuildWorker: false,
   },
   outputFileTracingRoot: path.resolve(__dirname),
